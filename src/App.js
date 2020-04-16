@@ -36,9 +36,10 @@ class App extends Component {
     this.swapAccessToken = this.swapAccessToken.bind(this);
     this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
   }
+
   componentDidMount() {
     let _code = queryString.parse(this.state.location.search).code;
-    const user = localStorage.getItem('user');
+    // const user = localStorage.getItem('user');
 
     if (_code) {
       this.setState({
@@ -46,10 +47,6 @@ class App extends Component {
       });
       this.swapAccessToken(_code);
       // this.getCurrentlyPlaying(_token);
-    } else {
-      window.location.replace(`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
-          "%20"
-      )}&response_type=code&show_dialog=true`)
     }
   }
 
@@ -57,12 +54,12 @@ class App extends Component {
     console.log(code)
     $.ajax({
       url: "https://iconic-hue-273619.appspot.com/auth/getTokens",
-      type: "POST",
-      data: $.param({"code": code}),
+      type: "GET",
+      data: $.param({"code": code, "redirect_uri": redirectUri}),
       success: data => {
         console.log(data)
         this.setState({
-          access_token: data.access_token
+          token: data.access_token
         })
         this.getCurrentlyPlaying(data.access_token)
       }
@@ -79,11 +76,14 @@ class App extends Component {
       },
       success: data => {
         console.log(data)
-        this.setState({
-          item: data.item,
-          is_playing: data.is_playing,
-          progress_ms: data.progress_ms
-        });
+        
+        if (data.item){
+          this.setState({
+            item: data.item,
+            is_playing: data.is_playing,
+            progress_ms: data.progress_ms
+          });
+        }
       }
     });
   }
@@ -99,14 +99,14 @@ class App extends Component {
                         "%20"
                     )}&response_type=code&show_dialog=true`}
                 >
-                  Login to Spotify
+                  Connect with Spotify
                 </a>
             )}
             {this.state.token && (
                 <Player
                     item={this.state.item}
                     is_playing={this.state.is_playing}
-                    progress_ms={this.progress_ms}
+                    progress_ms={this.state.progress_ms}
                 />
             )}
           </header>
