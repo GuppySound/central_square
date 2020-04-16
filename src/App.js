@@ -19,14 +19,14 @@ class App extends Component {
     super(props);
     this.state = {
       code: null,
-      token: null,
+      token: localStorage.getItem('access_token'),
       location: this.props.location,
       item: {
         album: {
-          images: [{ url: "https://upload.wikimedia.org/wikipedia/en/1/1a/Exmilitary_artwork.png" }]
+          images: [{ url: "" }]
         },
-        name: "test song",
-        artists: [{ name: "test artist" }],
+        name: "",
+        artists: [{ name: "" }],
         duration_ms: 0
       },
       is_playing: "Paused",
@@ -39,14 +39,14 @@ class App extends Component {
 
   componentDidMount() {
     let _code = queryString.parse(this.state.location.search).code;
-    // const user = localStorage.getItem('user');
-
-    if (_code) {
+    if (this.state.token){
+      this.getCurrentlyPlaying(this.state.token)
+    }
+    else if (_code) {
       this.setState({
         code: _code
       });
       this.swapAccessToken(_code);
-      // this.getCurrentlyPlaying(_token);
     }
   }
 
@@ -57,7 +57,7 @@ class App extends Component {
       type: "GET",
       data: $.param({"code": code, "redirect_uri": redirectUri}),
       success: data => {
-        console.log(data)
+        localStorage.setItem('access_token', data.access_token);
         this.setState({
           token: data.access_token
         })
@@ -76,7 +76,6 @@ class App extends Component {
       },
       success: data => {
         console.log(data)
-
         if (data.item){
           this.setState({
             item: data.item,
@@ -86,6 +85,14 @@ class App extends Component {
         }
       }
     });
+  }
+
+  clearSession = () => {
+    console.log("clear session");
+    localStorage.clear()
+    this.setState({
+      'token': null
+    })
   }
 
   render() {
@@ -103,11 +110,16 @@ class App extends Component {
                 </a>
             )}
             {this.state.token && (
-                <Player
-                    item={this.state.item}
-                    is_playing={this.state.is_playing}
-                    progress_ms={this.state.progress_ms}
-                />
+                <div>
+                  <Player
+                      item={this.state.item}
+                      is_playing={this.state.is_playing}
+                      progress_ms={this.state.progress_ms}
+                  />
+                  <button onClick={this.clearSession}>
+                    Clear Session
+                  </button>
+                </div>
             )}
           </header>
         </div>
