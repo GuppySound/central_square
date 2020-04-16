@@ -76,7 +76,7 @@ class App extends Component {
       },
       success: data => {
         console.log(data)
-        
+
         if (data.item){
           this.setState({
             item: data.item,
