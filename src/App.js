@@ -2,11 +2,13 @@ import React, { Component } from "react";
 import * as $ from "jquery";
 import { authEndpoint, clientId, redirectUri, scopes } from "./config";
 import Player from "./Player";
-import logo from "./logo.svg";
 import "./App.css";
 import {
   useLocation, Redirect
 } from "react-router-dom";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import Button from 'react-bootstrap/Button';
+
 
 const queryString = require('query-string');
 
@@ -100,14 +102,9 @@ class App extends Component {
         <div className="App">
           <header className="App-header">
             {!this.state.token && (
-                <a
-                    className="btn btn--loginApp-link"
-                    href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
-                        "%20"
-                    )}&response_type=code&show_dialog=true`}
-                >
-                  Connect with Spotify
-                </a>
+                <Button href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
+                    "%20"
+                )}&response_type=code&show_dialog=true`}>Connect with Spotify</Button>
             )}
             {this.state.token && (
                 <div>
@@ -116,9 +113,7 @@ class App extends Component {
                       is_playing={this.state.is_playing}
                       progress_ms={this.state.progress_ms}
                   />
-                  <button onClick={this.clearSession}>
-                    Clear Session
-                  </button>
+                  <Button variant="danger" onClick={this.clearSession}>Clear Session</Button>
                 </div>
             )}
           </header>
