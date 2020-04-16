@@ -5,7 +5,7 @@ import Player from "./Player";
 import logo from "./logo.svg";
 import "./App.css";
 import {
-  useLocation
+  useLocation, Redirect
 } from "react-router-dom";
 
 const queryString = require('query-string');
@@ -46,18 +46,24 @@ class App extends Component {
       });
       this.swapAccessToken(_code);
       // this.getCurrentlyPlaying(_token);
+    } else {
+      window.location.replace(`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
+          "%20"
+      )}&response_type=code&show_dialog=true`)
     }
   }
 
   swapAccessToken(code){
     console.log(code)
     $.ajax({
-      url: "https://iconic-hue-273619.appspot.com/auth/getCode",
+      url: "https://iconic-hue-273619.appspot.com/auth/getTokens",
       type: "POST",
       data: $.param({"code": code}),
       success: data => {
         console.log(data)
-        localStorage.setItem('user', 'ryan');
+        this.setState({
+          access_token: data.access_token
+        })
         this.getCurrentlyPlaying(data.access_token)
       }
     });
@@ -86,6 +92,16 @@ class App extends Component {
     return (
         <div className="App">
           <header className="App-header">
+            {!this.state.token && (
+                <a
+                    className="btn btn--loginApp-link"
+                    href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
+                        "%20"
+                    )}&response_type=code&show_dialog=true`}
+                >
+                  Login to Spotify
+                </a>
+            )}
             {this.state.token && (
                 <Player
                     item={this.state.item}
