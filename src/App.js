@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button';
+import Spinner from 'react-bootstrap/Spinner'
 
 
 const queryString = require('query-string');
@@ -53,7 +54,6 @@ class App extends Component {
   }
 
   swapAccessToken(code){
-    console.log(code)
     $.ajax({
       url: "https://iconic-hue-273619.appspot.com/auth/getTokens",
       type: "GET",
@@ -77,7 +77,6 @@ class App extends Component {
         xhr.setRequestHeader("Authorization", "Bearer " + token);
       },
       success: data => {
-        console.log(data)
         if (data.item){
           this.setState({
             item: data.item,
@@ -90,9 +89,9 @@ class App extends Component {
   }
 
   clearSession = () => {
-    console.log("clear session");
     localStorage.clear()
     this.setState({
+      'code': null,
       'token': null
     })
   }
@@ -101,10 +100,13 @@ class App extends Component {
     return (
         <div className="App">
           <header className="App-header">
-            {!this.state.token && (
+            {!this.state.code && !this.state.token && (
                 <Button href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
                     "%20"
                 )}&response_type=code&show_dialog=true`}>Connect with Spotify</Button>
+            )}
+            {this.state.code && !this.state.token && (
+                <Spinner animation="grow" variant="primary" />
             )}
             {this.state.token && (
                 <div>
