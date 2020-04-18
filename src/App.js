@@ -1,21 +1,15 @@
 import React, { Component } from "react";
 import * as $ from "jquery";
-import { authEndpoint, clientId, redirectUri, scopes } from "./config";
+import { authEndpoint, clientId, scopes } from "./config";
 import Player from "./Player";
 import "./App.css";
-import {
-  useLocation, Redirect
-} from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner'
 
-
 const queryString = require('query-string');
 
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
+const redirectUri = window.location.href
 
 class App extends Component {
   constructor(props) {
@@ -59,17 +53,18 @@ class App extends Component {
       type: "GET",
       data: $.param({"code": code, "redirect_uri": redirectUri}),
       success: data => {
-        localStorage.setItem('access_token', data.access_token);
-        this.setState({
-          token: data.access_token
-        })
-        this.getCurrentlyPlaying(data.access_token)
+        if (data.access_token){
+          localStorage.setItem('access_token', data.access_token);
+          this.setState({
+            token: data.access_token
+          })
+          this.getCurrentlyPlaying(data.access_token)
+        }
       }
     });
   }
 
   getCurrentlyPlaying(token) {
-    // Make a call using the token
     $.ajax({
       url: "https://api.spotify.com/v1/me/player",
       type: "GET",
