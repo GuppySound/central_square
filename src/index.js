@@ -5,6 +5,8 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import {BrowserRouter as Router, Route} from 'react-router-dom'
 
+import './fonts/Arimo-Regular.ttf'
+
 ReactDOM.render(
   <React.StrictMode>
       <Router>

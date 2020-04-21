@@ -1,22 +1,19 @@
 .App {
   text-align: center;
+  background-color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: black;
 }
 
 .App-logo {
   animation: App-logo-spin infinite 20s linear;
   height: 40vmin;
   pointer-events: none;
-}
-
-.App-header {
-  background-color: #ffffff;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
 .App-link {
@@ -44,7 +41,7 @@ html, body {
 
 body {
   background-color: #333;
-  color: #eee;
+  color: #000000;
   font-family: Helvetica, Arial;
   font-size: 3vmin;
 }
@@ -94,13 +91,18 @@ body {
   margin: 3em;
 }
 
-.container {
-  align-items: center;
-  display: flex;
-  justify-content: center;
-  height: 100%;
-}
-
 .main-container {
   flex: 1;
+}
+
+.row {
+  margin-top: 5%;
+  margin-bottom: 5%;
+}
+
+.profile-image {
+  height: calc(40px + 2vmin);
+  width: calc(40px + 2vmin);
+  margin-left: 10%;
+  margin-right: 10%;
 }
