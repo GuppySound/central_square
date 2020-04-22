@@ -1,43 +1,66 @@
 import React, { Component } from "react";
 import * as $ from "jquery";
 import { authEndpoint, clientId, scopes } from "./config";
-import Player from "./Player";
 import "./App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner'
+import {Container, Row, Col, Navbar, Image, Media, ListGroup} from 'react-bootstrap'
+import Sidebar from "react-sidebar";
+import MaterialTitlePanel from "./material_title_panel";
+import SidebarContent from "./sidebar_content";
 
 const queryString = require('query-string');
 
 const redirectUri = window.location.href
+
+const styles = {
+  contentHeaderMenuLink: {
+    textDecoration: "none",
+    color: "white",
+    padding: 8
+  },
+  content: {
+    padding: 0,
+    height: "100%",
+    overflow: "hidden"
+  }
+};
+
+const mql = window.matchMedia(`(min-width: 800px)`);
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       code: null,
-      token: localStorage.getItem('access_token'),
+      user_id: localStorage.getItem('user_id'),
       location: this.props.location,
-      item: {
-        album: {
-          images: [{ url: "" }]
-        },
-        name: "",
-        artists: [{ name: "" }],
-        duration_ms: 0
-      },
-      is_playing: "Paused",
-      progress_ms: 0
+      viewing_profile: false,
+      docked: mql.matches,
+      open: false
     };
 
     this.swapAccessToken = this.swapAccessToken.bind(this);
-    this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
+    this.clearSession = this.clearSession.bind(this);
+
+    this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
+    this.toggleOpen = this.toggleOpen.bind(this);
+    this.onSetOpen = this.onSetOpen.bind(this);
+    // this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
+  }
+
+  componentWillMount() {
+    mql.addListener(this.mediaQueryChanged);
+  }
+
+  componentWillUnmount() {
+    mql.removeListener(this.mediaQueryChanged);
   }
 
   componentDidMount() {
     let _code = queryString.parse(this.state.location.search).code;
-    if (this.state.token){
-      this.getCurrentlyPlaying(this.state.token)
+    if (this.state.user_id){
     }
     else if (_code) {
       this.setState({
@@ -47,73 +70,126 @@ class App extends Component {
     }
   }
 
+  onSetOpen(open) {
+    this.setState({ open });
+  }
+
+  mediaQueryChanged() {
+    this.setState({
+      docked: mql.matches,
+      open: false
+    });
+  }
+
+  toggleOpen(ev) {
+    this.setState({ open: !this.state.open });
+
+    if (ev) {
+      ev.preventDefault();
+    }
+  }
+
   swapAccessToken(code){
     $.ajax({
       url: "https://iconic-hue-273619.appspot.com/auth/getTokens",
       type: "GET",
       data: $.param({"code": code, "redirect_uri": redirectUri}),
       success: data => {
-        if (data.access_token){
-          localStorage.setItem('access_token', data.access_token);
+        if (data.user_id || true){ // set "true" for testing
+          localStorage.setItem('user_id', data.user_id);
           this.setState({
-            token: data.access_token
+            user_id: data.user_id || "testing"
           })
-          this.getCurrentlyPlaying(data.access_token)
         }
       }
     });
   }
 
-  getCurrentlyPlaying(token) {
-    $.ajax({
-      url: "https://api.spotify.com/v1/me/player",
-      type: "GET",
-      beforeSend: xhr => {
-        xhr.setRequestHeader("Authorization", "Bearer " + token);
-      },
-      success: data => {
-        if (data.item){
-          this.setState({
-            item: data.item,
-            is_playing: data.is_playing,
-            progress_ms: data.progress_ms
-          });
-        }
-      }
-    });
-  }
-
-  clearSession = () => {
+  clearSession() {
+    console.log("session cleared")
     localStorage.clear()
     this.setState({
       'code': null,
-      'token': null
+      'user_id': null
     })
   }
 
   render() {
+
+    const sidebar = <SidebarContent
+        clearSession={this.clearSession}
+    />;
+
+    const contentHeader = (
+        <span>
+        {!this.state.docked && (
+            <a
+                onClick={this.toggleOpen}
+                href="#"
+                style={styles.contentHeaderMenuLink}
+            >
+              =
+            </a>
+        )}
+          <span> Following</span>
+      </span>
+    );
+
+    const sidebarProps = {
+      sidebar,
+      docked: this.state.docked,
+      open: this.state.open,
+      onSetOpen: this.onSetOpen,
+      rootId: "root",
+      sidebarId: "sidebar",
+      contentId: "content",
+      overlayId: "overlay"
+    };
+
+    const following = [];
+
+    for (let ind = 0; ind < 20; ind++) {
+      following.push(
+        <ListGroup.Item>Larry David #{ind}</ListGroup.Item>
+      );
+    }
+
     return (
         <div className="App">
-          <header className="App-header">
-            {!this.state.code && !this.state.token && (
-                <Button href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
+            {!this.state.code && !this.state.user_id && (
+                <Button
+                    href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
                     "%20"
                 )}&response_type=code&show_dialog=true`}>Connect with Spotify</Button>
             )}
-            {this.state.code && !this.state.token && (
+            {this.state.code && !this.state.user_id && (
                 <Spinner animation="grow" variant="primary" />
             )}
-            {this.state.token && (
-                <div>
-                  <Player
-                      item={this.state.item}
-                      is_playing={this.state.is_playing}
-                      progress_ms={this.state.progress_ms}
-                  />
-                  <Button variant="danger" onClick={this.clearSession}>Clear Session</Button>
-                </div>
+            {this.state.user_id && (
+                <Sidebar {...sidebarProps}>
+                  <MaterialTitlePanel title={contentHeader}>
+                    <div style={styles.content}>
+                      <Container>
+                          <Col
+                              sm={7}
+                              style={
+                                {
+                                  "padding": 0,
+                                  "box-shadow": "rgba(0, 0, 0, 0.15) 2px 2px 4px",
+                                  "height": "100%",
+                                  "overflow-y": "scroll"
+                                }
+                              }>
+                            <ListGroup variant="flush">
+                              {following}
+                            </ListGroup>
+                          </Col>
+                          <Col sm={5}></Col>
+                      </Container>
+                    </div>
+                  </MaterialTitlePanel>
+                </Sidebar>
             )}
-          </header>
         </div>
     );
   }
