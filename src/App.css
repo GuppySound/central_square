@@ -109,3 +109,8 @@ body {
   padding: 0;
   margin: 0;
 }
+
+.listening-status {
+  color: gray;
+  font-size: calc(6px + 2vmin);
+}
