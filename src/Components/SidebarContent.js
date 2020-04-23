@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import MaterialTitlePanel from "./material_title_panel";
+import MaterialTitlePanel from "./TitlePanel";
 import Button from 'react-bootstrap/Button';
 
 const styles = {

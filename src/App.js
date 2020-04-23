@@ -2,7 +2,9 @@ import React, { Component } from "react";
 import * as $ from "jquery";
 import { authEndpoint, clientId, scopes } from "./config";
 import "./App.css";
+
 import 'bootstrap/dist/css/bootstrap.min.css';
+<<<<<<< HEAD
 import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 import {Container, Row, Col, Navbar, Image, Media, ListGroup} from 'react-bootstrap';
@@ -12,10 +14,17 @@ import SidebarContent from "./sidebar_content";
 require('dotenv').config();
 
 let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL_LOCAL : process.env.REACT_APP_WP_URL)
+=======
+import {Container, Col, ListGroup, Button, Spinner} from 'react-bootstrap'
+import Sidebar from "react-sidebar";
+>>>>>>> f7a28169523720b269fe6dccb4a905a2d5990c69
+
+import MaterialTitlePanel from "./Components/TitlePanel";
+import SidebarContent from "./Components/SidebarContent";
+import Followee from "./Components/Followee";
 
 const queryString = require('query-string');
-
-const redirectUri = window.location.href
+const redirectUri = window.location.href.split("?")[0]
 
 const styles = {
   contentHeaderMenuLink: {
@@ -50,7 +59,6 @@ class App extends Component {
     this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
     this.toggleOpen = this.toggleOpen.bind(this);
     this.onSetOpen = this.onSetOpen.bind(this);
-    // this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
   }
 
   componentWillMount() {
@@ -109,7 +117,6 @@ class App extends Component {
   }
 
   clearSession() {
-    console.log("session cleared")
     localStorage.clear()
     this.setState({
       'code': null,
@@ -150,10 +157,14 @@ class App extends Component {
     };
 
     const following = [];
-
     for (let ind = 0; ind < 20; ind++) {
       following.push(
-        <ListGroup.Item>Larry David #{ind}</ListGroup.Item>
+        <Followee
+            name={"Larry David"}
+            listening_status={"Listening to blah blah blah"}
+            profile_image={'https://www.si.com/.image/ar_1:1%2Cc_fill%2Ccs_srgb%2Cfl_progressive%2Cq_auto:good%2Cw_1200/MTY5NjAxOTQwODkwNTkzMDkz/larry-david.jpg'}
+        >
+        </Followee>
       );
     }
 
