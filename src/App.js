@@ -4,24 +4,16 @@ import { authEndpoint, clientId, scopes } from "./config";
 import "./App.css";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-<<<<<<< HEAD
-import Button from 'react-bootstrap/Button';
-import Spinner from 'react-bootstrap/Spinner';
-import {Container, Row, Col, Navbar, Image, Media, ListGroup} from 'react-bootstrap';
+import {Container, Button, Spinner, Col, ListGroup} from 'react-bootstrap';
 import Sidebar from "react-sidebar";
-import MaterialTitlePanel from "./material_title_panel";
-import SidebarContent from "./sidebar_content";
-require('dotenv').config();
-
-let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL_LOCAL : process.env.REACT_APP_WP_URL)
-=======
-import {Container, Col, ListGroup, Button, Spinner} from 'react-bootstrap'
-import Sidebar from "react-sidebar";
->>>>>>> f7a28169523720b269fe6dccb4a905a2d5990c69
 
 import MaterialTitlePanel from "./Components/TitlePanel";
 import SidebarContent from "./Components/SidebarContent";
 import Followee from "./Components/Followee";
+
+require('dotenv').config();
+
+let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL_LOCAL : process.env.REACT_APP_WP_URL)
 
 const queryString = require('query-string');
 const redirectUri = window.location.href.split("?")[0]
