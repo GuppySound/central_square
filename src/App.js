@@ -6,14 +6,18 @@ import "./App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {Container, Button, Spinner, Col, ListGroup} from 'react-bootstrap';
 import Sidebar from "react-sidebar";
+import {BottomNavigation, BottomNavigationAction} from "@material-ui/core";
 
 import MaterialTitlePanel from "./Components/TitlePanel";
 import SidebarContent from "./Components/SidebarContent";
 import Followee from "./Components/Followee";
 
+import HomeIcon from '@material-ui/icons/Home'
+import SearchIcon from '@material-ui/icons/Search'
+
 require('dotenv').config();
 
-let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL_LOCAL : process.env.REACT_APP_WP_URL)
+let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL : process.env.REACT_APP_WP_URL)
 
 const queryString = require('query-string');
 const redirectUri = window.location.href.split("?")[0]
@@ -152,6 +156,7 @@ class App extends Component {
     for (let ind = 0; ind < 20; ind++) {
       following.push(
         <Followee
+            key={ind}
             name={"Larry David"}
             listening_status={"Listening to blah blah blah"}
             profile_image={'https://www.si.com/.image/ar_1:1%2Cc_fill%2Ccs_srgb%2Cfl_progressive%2Cq_auto:good%2Cw_1200/MTY5NjAxOTQwODkwNTkzMDkz/larry-david.jpg'}
@@ -175,15 +180,15 @@ class App extends Component {
                 <Sidebar {...sidebarProps}>
                   <MaterialTitlePanel title={contentHeader}>
                     <div style={styles.content}>
-                      <Container>
+                      <Container style={{"padding": 0}}>
                           <Col
                               sm={7}
                               style={
                                 {
                                   "padding": 0,
-                                  "box-shadow": "rgba(0, 0, 0, 0.15) 2px 2px 4px",
+                                  "boxShadow": "rgba(0, 0, 0, 0.15) 2px 2px 4px",
                                   "height": "100%",
-                                  "overflow-y": "scroll"
+                                  "overflowY": "scroll"
                                 }
                               }>
                             <ListGroup variant="flush">
@@ -193,6 +198,16 @@ class App extends Component {
                           <Col sm={5}></Col>
                       </Container>
                     </div>
+                    {!this.state.docked && (
+                        <BottomNavigation
+                            value={0}
+                            style={{'width': '100%', 'borderTop': 'solid 1px rgba(0,0,0,.125)'}}
+                            showLabels
+                        >
+                          <BottomNavigationAction icon={<HomeIcon />} />
+                          <BottomNavigationAction icon={<SearchIcon />} />
+                        </BottomNavigation>
+                    )}
                   </MaterialTitlePanel>
                 </Sidebar>
             )}
