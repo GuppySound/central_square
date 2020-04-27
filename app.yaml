@@ -13,7 +13,7 @@
 
 # [START gae_quickstart_yaml]
 runtime: nodejs10
-service: central-square
+service: default
 handlers:
   - url: /
     static_files: build/index.html
