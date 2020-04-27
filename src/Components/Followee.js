@@ -1,5 +1,7 @@
 import React from "react";
 import {Image, ListGroup} from "react-bootstrap";
+import Avatar from "@material-ui/core/Avatar";
+import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 
 const Followee = props => {
 
@@ -13,15 +15,12 @@ const Followee = props => {
                     alignItems: "center",
                 }
             }>
-                <Image
-                    src={props.profile_image}
-                    roundedCircle
-                    style={{
+                <ListItemAvatar style={{marginRight: '3%'}}>
+                    <Avatar alt={props.name} src={props.profile_image} style={{
                         height: 50,
                         width: 50,
-                        marginRight: '3%'
-                    }}
-                />
+                    }} />
+                </ListItemAvatar>
                 <div style={{
                     display: "flex",
                     flexDirection: "column",

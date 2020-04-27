@@ -1,7 +1,17 @@
 import React from "react";
 import PropTypes from "prop-types";
 import MaterialTitlePanel from "./TitlePanel";
-import Button from 'react-bootstrap/Button';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
+import Divider from '@material-ui/core/Divider';
+import HomeIcon from '@material-ui/icons/Home';
+import GroupIcon from '@material-ui/icons/Group';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+import Avatar from '@material-ui/core/Avatar';
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
 
 const styles = {
     sidebar: {
@@ -20,11 +30,17 @@ const styles = {
         backgroundColor: "#757575"
     },
     content: {
-        padding: "16px",
         height: "100%",
         backgroundColor: "white"
+    },
+    paper: {
+        width: "100%",
     }
 };
+
+function ListItemLink(props) {
+    return <ListItem button component="a" {...props} />;
+}
 
 const SidebarContent = props => {
     const style = props.style
@@ -34,7 +50,39 @@ const SidebarContent = props => {
     return (
         <MaterialTitlePanel title="Menu" style={style}>
             <div style={styles.content}>
-                <Button variant="danger" onClick={props.clearSession}>Log Out</Button>
+                <List component="nav" aria-label="main mailbox folders">
+                    <ListItemLink href="#home">
+                        <ListItemIcon>
+                            <HomeIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Home" />
+                    </ListItemLink>
+                    <ListItemLink href="#followers">
+                        <ListItemIcon>
+                            <GroupIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Followers" />
+                    </ListItemLink>
+                </List>
+                <Divider />
+                <List component="nav" aria-label="secondary mailbox folders">
+                    <ListItem alignItems="flex-start">
+                        <ListItemAvatar>
+                            <Avatar alt={props.user.spotify_display_name} src={props.user.spotify_profile_picture} />
+                        </ListItemAvatar>
+                        <ListItemText
+                            primary={props.user.spotify_display_name}
+                            secondary={
+                                <Button
+                                    color="secondary"
+                                    style={{"padding":0}}
+                                    onClick={props.clearSession}>
+                                    Log Out
+                                </Button>
+                            }
+                        />
+                    </ListItem>
+                </List>
             </div>
         </MaterialTitlePanel>
     );
