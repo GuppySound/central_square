@@ -17,7 +17,7 @@ import SearchIcon from '@material-ui/icons/Search'
 
 require('dotenv').config();
 
-let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL : process.env.REACT_APP_WP_URL)
+let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL_LOCAL : process.env.REACT_APP_WP_URL)
 
 const queryString = require('query-string');
 const redirectUri = window.location.href.split("?")[0]
@@ -49,7 +49,7 @@ class App extends Component {
       open: false
     };
 
-    this.swapAccessToken = this.swapAccessToken.bind(this);
+    this.createUser = this.createUser.bind(this);
     this.clearSession = this.clearSession.bind(this);
 
     this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
@@ -73,7 +73,7 @@ class App extends Component {
       this.setState({
         code: _code
       });
-      this.swapAccessToken(_code);
+      this.createUser(_code);
     }
   }
 
@@ -90,24 +90,27 @@ class App extends Component {
 
   toggleOpen(ev) {
     this.setState({ open: !this.state.open });
-
     if (ev) {
       ev.preventDefault();
     }
   }
 
-  swapAccessToken(code){
+  createUser(code){
     $.ajax({
-      url: `${wp_URL}/auth/getTokens`,
-      type: "GET",
+      url: `${wp_URL}/api/users/createUser`,
+      type: "POST",
       data: $.param({"code": code, "redirect_uri": redirectUri}),
       success: data => {
-        if (data.user_id || true){ // set "true" for testing
-          localStorage.setItem('user_id', data.user_id);
+        const json = $.parseJSON(data)
+        if (json.id){ // set "true" for testing
+          localStorage.setItem('user_id', json.id);
           this.setState({
-            user_id: data.user_id || "testing"
+            user_id: json.id
           })
         }
+      },
+      error: error_msg => {
+        console.log(error_msg)
       }
     });
   }
