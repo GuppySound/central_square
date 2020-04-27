@@ -7,13 +7,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import {Container, Button, Spinner, Col, ListGroup} from 'react-bootstrap';
 import Sidebar from "react-sidebar";
 import {BottomNavigation, BottomNavigationAction} from "@material-ui/core";
+import HomeIcon from '@material-ui/icons/Home'
+import SearchIcon from '@material-ui/icons/Search'
 
 import MaterialTitlePanel from "./Components/TitlePanel";
 import SidebarContent from "./Components/SidebarContent";
 import Followee from "./Components/Followee";
-
-import HomeIcon from '@material-ui/icons/Home'
-import SearchIcon from '@material-ui/icons/Search'
+import db from './fire';
 
 require('dotenv').config();
 
@@ -46,10 +46,18 @@ class App extends Component {
       location: this.props.location,
       viewing_profile: false,
       docked: mql.matches,
-      open: false
+      open: false,
+      user: null,
+      following: []
     };
 
+    mql.addEventListener("change", () => {
+      this.mediaQueryChanged();
+    });
+
     this.createUser = this.createUser.bind(this);
+    this.getUser = this.getUser.bind(this);
+    this.getFollowing = this.getFollowing.bind(this);
     this.clearSession = this.clearSession.bind(this);
 
     this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
@@ -57,17 +65,10 @@ class App extends Component {
     this.onSetOpen = this.onSetOpen.bind(this);
   }
 
-  componentWillMount() {
-    mql.addListener(this.mediaQueryChanged);
-  }
-
-  componentWillUnmount() {
-    mql.removeListener(this.mediaQueryChanged);
-  }
-
   componentDidMount() {
     let _code = queryString.parse(this.state.location.search).code;
     if (this.state.user_id){
+      this.getUser(this.state.user_id)
     }
     else if (_code) {
       this.setState({
@@ -107,6 +108,7 @@ class App extends Component {
           this.setState({
             user_id: json.id
           })
+          this.getUser(json.id);
         }
       },
       error: error_msg => {
@@ -115,17 +117,51 @@ class App extends Component {
     });
   }
 
+  getUser(user_id){
+    const userRef = db.collection("users_development").doc(user_id);
+    const self = this;
+    userRef.get().then(function(doc) {
+      if (doc.exists) {
+        self.setState({
+          "user": doc.data()
+        })
+        self.getFollowing(user_id)
+      } else {
+        console.log("No such document!");
+      }
+    }).catch(function(error) {
+      console.log("Error getting document:", error);
+    });
+  }
+
+  getFollowing(user_id){
+    const usersRef = db.collection("users_development").where("followers", "array-contains", user_id);
+    const self = this;
+    usersRef
+        .onSnapshot(function(querySnapshot) {
+          var following = [];
+          querySnapshot.forEach(function(doc) {
+            following.push(doc.data());
+          });
+          self.setState({
+            "following": following
+          })
+        });
+  }
+
   clearSession() {
     localStorage.clear()
     this.setState({
       'code': null,
-      'user_id': null
+      'user_id': null,
+      'user': null,
     })
   }
 
   render() {
 
     const sidebar = <SidebarContent
+        user={this.state.user}
         clearSession={this.clearSession}
     />;
 
@@ -155,18 +191,13 @@ class App extends Component {
       overlayId: "overlay"
     };
 
-    const following = [];
-    for (let ind = 0; ind < 20; ind++) {
-      following.push(
-        <Followee
-            key={ind}
-            name={"Larry David"}
-            listening_status={"Listening to blah blah blah"}
-            profile_image={'https://www.si.com/.image/ar_1:1%2Cc_fill%2Ccs_srgb%2Cfl_progressive%2Cq_auto:good%2Cw_1200/MTY5NjAxOTQwODkwNTkzMDkz/larry-david.jpg'}
-        >
-        </Followee>
-      );
-    }
+    const following = this.state.following.map((f) => <Followee
+        key={f.spotify_display_name}
+        name={f.spotify_display_name}
+        listening_status={"blah blah blah"}
+        profile_image={f.spotify_profile_picture}
+    >
+    </Followee>);
 
     return (
         <div className="App">
@@ -176,10 +207,10 @@ class App extends Component {
                     "%20"
                 )}&response_type=code&show_dialog=true`}>Connect with Spotify</Button>
             )}
-            {this.state.code && !this.state.user_id && (
+            {this.state.code && !this.state.user && (
                 <Spinner animation="grow" variant="primary" />
             )}
-            {this.state.user_id && (
+            {this.state.user && (
                 <Sidebar {...sidebarProps}>
                   <MaterialTitlePanel title={contentHeader}>
                     <div style={styles.content}>
