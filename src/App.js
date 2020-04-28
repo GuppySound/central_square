@@ -56,6 +56,7 @@ class App extends Component {
     });
 
     this.createUser = this.createUser.bind(this);
+    this.updateFollowing = this.updateFollowing.bind(this)
     this.getUser = this.getUser.bind(this);
     this.getFollowing = this.getFollowing.bind(this);
     this.clearSession = this.clearSession.bind(this);
@@ -68,7 +69,7 @@ class App extends Component {
   componentDidMount() {
     let _code = queryString.parse(this.state.location.search).code;
     if (this.state.user_id){
-      this.getUser(this.state.user_id)
+      this.updateFollowing(this.state.user_id)
     }
     else if (_code) {
       this.setState({
@@ -110,6 +111,20 @@ class App extends Component {
           })
           this.getUser(json.id);
         }
+      },
+      error: error_msg => {
+        console.log(error_msg)
+      }
+    });
+  }
+
+  updateFollowing(user_id){
+    $.ajax({
+      url: `${wp_URL}/api/users/updateFollowing`,
+      type: "POST",
+      data: $.param({"id": user_id}),
+      success: data => {
+        this.getUser(user_id)
       },
       error: error_msg => {
         console.log(error_msg)

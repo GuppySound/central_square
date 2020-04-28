@@ -1,5 +1,5 @@
 import React from "react";
-import {Image, ListGroup} from "react-bootstrap";
+import {ListGroup} from "react-bootstrap";
 import Avatar from "@material-ui/core/Avatar";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 
