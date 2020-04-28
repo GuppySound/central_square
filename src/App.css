@@ -113,4 +113,5 @@ body {
 .listening-status {
   color: gray;
   font-size: calc(6px + 2vmin);
+  text-align: left;
 }

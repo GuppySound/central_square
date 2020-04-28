@@ -1,7 +1,38 @@
 import React from "react";
 import {ListGroup} from "react-bootstrap";
+import Badge from '@material-ui/core/Badge';
 import Avatar from "@material-ui/core/Avatar";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
+import { makeStyles, withStyles } from '@material-ui/core/styles';
+
+const StyledBadge = withStyles((theme) => ({
+    badge: {
+        backgroundColor: '#44b700',
+        color: '#44b700',
+        boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+        '&::after': {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            // animation: '$ripple 1.2s infinite ease-in-out',
+            border: '1px solid currentColor',
+            content: '""',
+        },
+    },
+    '@keyframes ripple': {
+        '0%': {
+            transform: 'scale(.8)',
+            opacity: 1,
+        },
+        '100%': {
+            transform: 'scale(2.4)',
+            opacity: 0,
+        },
+    },
+}))(Badge);
 
 const Followee = props => {
 
@@ -16,10 +47,27 @@ const Followee = props => {
                 }
             }>
                 <ListItemAvatar style={{marginRight: '3%'}}>
-                    <Avatar alt={props.name} src={props.profile_image} style={{
-                        height: 50,
-                        width: 50,
-                    }} />
+                    {props.user.spotify_playback.is_active && (
+                        <StyledBadge
+                            overlap="circle"
+                            anchorOrigin={{
+                                vertical: 'bottom',
+                                horizontal: 'right',
+                            }}
+                            variant="dot"
+                        >
+                            <Avatar alt={props.user.spotify_display_name} src={props.user.spotify_profile_picture} style={{
+                                height: 50,
+                                width: 50,
+                            }} />
+                        </StyledBadge>
+                    )}
+                    {!props.user.spotify_playback.is_active && (
+                        <Avatar alt={props.user.spotify_display_name} src={props.user.spotify_profile_picture} style={{
+                            height: 50,
+                            width: 50,
+                        }} />
+                    )}
                 </ListItemAvatar>
                 <div style={{
                     display: "flex",
@@ -28,10 +76,10 @@ const Followee = props => {
                     alignItems: "flex-start"
                 }}>
                     <div>
-                        {props.name}
+                        {props.user.spotify_display_name}
                     </div>
                     <div className={"listening-status"}>
-                        {props.listening_status}
+                        {props.user.spotify_playback.track_name} - {props.user.spotify_playback.artist_name}
                     </div>
                 </div>
 

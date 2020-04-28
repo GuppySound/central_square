@@ -158,6 +158,9 @@ class App extends Component {
           querySnapshot.forEach(function(doc) {
             following.push(doc.data());
           });
+          following.sort(function(a, b) {
+            return (b.spotify_playback||{}).is_active - (a.spotify_playback||{}).is_active;
+          });
           self.setState({
             "following": following
           })
@@ -206,11 +209,9 @@ class App extends Component {
       overlayId: "overlay"
     };
 
-    const following = this.state.following ? this.state.following.map((f) => <Followee
-        key={f.spotify_display_name}
-        name={f.spotify_display_name}
-        listening_status={"blah blah blah"}
-        profile_image={f.spotify_profile_picture}
+    const following = this.state.following ? this.state.following.map((f, index) => <Followee
+        key={index}
+        user={f}
     >
     </Followee>) : [];
 
