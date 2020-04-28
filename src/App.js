@@ -48,7 +48,7 @@ class App extends Component {
       docked: mql.matches,
       open: false,
       user: null,
-      following: []
+      following: null
     };
 
     mql.addEventListener("change", () => {
@@ -69,7 +69,7 @@ class App extends Component {
   componentDidMount() {
     let _code = queryString.parse(this.state.location.search).code;
     if (this.state.user_id){
-      this.updateFollowing(this.state.user_id)
+      this.getUser(this.state.user_id)
     }
     else if (_code) {
       this.setState({
@@ -124,7 +124,7 @@ class App extends Component {
       type: "POST",
       data: $.param({"id": user_id}),
       success: data => {
-        this.getUser(user_id)
+        this.getFollowing(user_id)
       },
       error: error_msg => {
         console.log(error_msg)
@@ -140,7 +140,7 @@ class App extends Component {
         self.setState({
           "user": doc.data()
         })
-        self.getFollowing(user_id)
+        self.updateFollowing(user_id)
       } else {
         console.log("No such document!");
       }
@@ -157,6 +157,9 @@ class App extends Component {
           var following = [];
           querySnapshot.forEach(function(doc) {
             following.push(doc.data());
+          });
+          following.sort(function(a, b) {
+            return (b.spotify_playback||{}).is_active - (a.spotify_playback||{}).is_active;
           });
           self.setState({
             "following": following
@@ -206,13 +209,11 @@ class App extends Component {
       overlayId: "overlay"
     };
 
-    const following = this.state.following.map((f) => <Followee
-        key={f.spotify_display_name}
-        name={f.spotify_display_name}
-        listening_status={"blah blah blah"}
-        profile_image={f.spotify_profile_picture}
+    const following = this.state.following ? this.state.following.map((f, index) => <Followee
+        key={index}
+        user={f}
     >
-    </Followee>);
+    </Followee>) : [];
 
     return (
         <div className="App">
@@ -221,9 +222,6 @@ class App extends Component {
                     href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
                     "%20"
                 )}&response_type=code&show_dialog=true`}>Connect with Spotify</Button>
-            )}
-            {this.state.code && !this.state.user && (
-                <Spinner animation="grow" variant="primary" />
             )}
             {this.state.user && (
                 <Sidebar {...sidebarProps}>
@@ -234,15 +232,30 @@ class App extends Component {
                               sm={7}
                               style={
                                 {
-                                  "padding": 0,
-                                  "boxShadow": "rgba(0, 0, 0, 0.15) 2px 2px 4px",
-                                  "height": "100%",
-                                  "overflowY": "scroll"
+                                  padding: 0,
+                                  boxShadow: "rgba(0, 0, 0, 0.15) 2px 2px 4px",
+                                  height: "100%",
+                                  overflowY: "scroll",
                                 }
                               }>
-                            <ListGroup variant="flush">
-                              {following}
-                            </ListGroup>
+                            {!this.state.following && (
+                                <div style={{
+                                  height: "100%",
+                                  width: "100%",
+                                  paddingTop: "20%",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  justifyContent: "flex-start",
+                                  alignItems: "center"
+                                }}>
+                                  <Spinner animation="grow" variant="primary"/>
+                                </div>
+                            )}
+                            {this.state.following && (
+                                <ListGroup variant="flush">
+                                  {following}
+                                </ListGroup>
+                            )}
                           </Col>
                           <Col sm={5}></Col>
                       </Container>
