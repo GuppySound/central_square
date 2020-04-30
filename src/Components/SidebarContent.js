@@ -11,7 +11,6 @@ import GroupIcon from '@material-ui/icons/Group';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
-import Typography from '@material-ui/core/Typography';
 
 const styles = {
     sidebar: {

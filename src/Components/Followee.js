@@ -3,7 +3,7 @@ import {ListGroup} from "react-bootstrap";
 import Badge from '@material-ui/core/Badge';
 import Avatar from "@material-ui/core/Avatar";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
-import { makeStyles, withStyles } from '@material-ui/core/styles';
+import { withStyles } from '@material-ui/core/styles';
 
 const StyledBadge = withStyles((theme) => ({
     badge: {
@@ -36,6 +36,7 @@ const StyledBadge = withStyles((theme) => ({
 
 const Followee = props => {
 
+    const playback = props.user.spotify_playback || {}
     return (
         <ListGroup.Item>
             <div style={
@@ -47,7 +48,7 @@ const Followee = props => {
                 }
             }>
                 <ListItemAvatar style={{marginRight: '3%'}}>
-                    {props.user.spotify_playback.is_active && (
+                    {playback.is_playing && (
                         <StyledBadge
                             overlap="circle"
                             anchorOrigin={{
@@ -62,7 +63,7 @@ const Followee = props => {
                             }} />
                         </StyledBadge>
                     )}
-                    {!props.user.spotify_playback.is_active && (
+                    {!playback.is_playing && (
                         <Avatar alt={props.user.spotify_display_name} src={props.user.spotify_profile_picture} style={{
                             height: 50,
                             width: 50,
@@ -79,7 +80,7 @@ const Followee = props => {
                         {props.user.spotify_display_name}
                     </div>
                     <div className={"listening-status"}>
-                        {props.user.spotify_playback.track_name} - {props.user.spotify_playback.artist_name}
+                        {playback.track_name} - {playback.artist_name}
                     </div>
                 </div>
 
