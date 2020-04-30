@@ -4,20 +4,22 @@ import { authEndpoint, clientId, scopes } from "./config";
 import "./App.css";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Container, Button, Spinner, Col, ListGroup} from 'react-bootstrap';
+import {Container, Button, Spinner, Row, Col, ListGroup} from 'react-bootstrap';
 import Sidebar from "react-sidebar";
-import {BottomNavigation, BottomNavigationAction} from "@material-ui/core";
+import {BottomNavigation, BottomNavigationAction, TextField, InputAdornment} from "@material-ui/core";
 import HomeIcon from '@material-ui/icons/Home'
 import SearchIcon from '@material-ui/icons/Search'
 
 import MaterialTitlePanel from "./Components/TitlePanel";
 import SidebarContent from "./Components/SidebarContent";
 import Followee from "./Components/Followee";
-import db from './fire';
+import SearchBox from "./Components/SearchBox";
+import {db, functions} from './fire';
 
 require('dotenv').config();
 
-let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ? process.env.REACT_APP_WP_URL_LOCAL : process.env.REACT_APP_WP_URL)
+let wp_URL = ((process.env.REACT_APP_IS_LOCAL) ?
+    "http://".concat(window.location.hostname.concat(":8080")) : process.env.REACT_APP_WP_URL)
 
 const queryString = require('query-string');
 const redirectUri = window.location.href.split("?")[0]
@@ -41,6 +43,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      _temp: false,
       code: null,
       user_id: localStorage.getItem('user_id'),
       location: this.props.location,
@@ -48,18 +51,19 @@ class App extends Component {
       docked: mql.matches,
       open: false,
       user: null,
-      following: null
+      following: null,
+      loading_ids: [],
+      searchResults: null
     };
 
-    mql.addEventListener("change", () => {
-      this.mediaQueryChanged();
-    });
+    mql.addListener(this.mediaQueryChanged);
 
     this.createUser = this.createUser.bind(this);
     this.updateFollowing = this.updateFollowing.bind(this)
     this.getUser = this.getUser.bind(this);
     this.getFollowing = this.getFollowing.bind(this);
     this.clearSession = this.clearSession.bind(this);
+    this.toggleFollow = this.toggleFollow.bind(this);
 
     this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
     this.toggleOpen = this.toggleOpen.bind(this);
@@ -67,6 +71,7 @@ class App extends Component {
   }
 
   componentDidMount() {
+
     let _code = queryString.parse(this.state.location.search).code;
     if (this.state.user_id){
       this.getUser(this.state.user_id)
@@ -162,9 +167,22 @@ class App extends Component {
             return (b.spotify_playback||{}).is_active - (a.spotify_playback||{}).is_active;
           });
           self.setState({
-            "following": following
+            following: following,
+            loading_ids: []
           })
         });
+  }
+
+  toggleFollow(id, following){
+    const joined = this.state.loading_ids.concat(id);
+    this.setState({ loading_ids: joined })
+
+    const cloudFunction = following ? functions.httpsCallable('removeFollower') : functions.httpsCallable('addFollower');
+    cloudFunction({follower_id: this.state.user_id, followee_id: id}).then(function(result) {
+      return true
+    }).catch(function(error) {
+      return false
+    });
   }
 
   clearSession() {
@@ -228,16 +246,15 @@ class App extends Component {
                   <MaterialTitlePanel title={contentHeader}>
                     <div style={styles.content}>
                       <Container style={{"padding": 0}}>
+                        <Row style={{margin: 0, height: "100%"}}>
                           <Col
-                              sm={7}
-                              style={
-                                {
+                              xs={12} sm={12} md={7}
+                              style={{
                                   padding: 0,
-                                  boxShadow: "rgba(0, 0, 0, 0.15) 2px 2px 4px",
                                   height: "100%",
                                   overflowY: "scroll",
-                                }
-                              }>
+                                  borderRight: 'solid 1px rgba(0,0,0,.125)'
+                              }}>
                             {!this.state.following && (
                                 <div style={{
                                   height: "100%",
@@ -257,13 +274,34 @@ class App extends Component {
                                 </ListGroup>
                             )}
                           </Col>
-                          <Col sm={5}></Col>
+                          <Col sx={0} sm={0} md={5} style={{padding: "3%"}}>
+                            <SearchBox
+                                id={this.state.user_id}
+                                loading_ids={this.state.loading_ids}
+                                toggleFollow={this.toggleFollow}
+                            ></SearchBox>
+                            {this.state._temp && (<TextField
+                                //variant="filled"
+                                label="Search"
+                                type="search"
+                                fullWidth={true}
+                                InputProps={{
+                                  startAdornment: (
+                                      <InputAdornment position="start">
+                                        <SearchIcon />
+                                      </InputAdornment>
+                                  ),
+                                }}
+                                onChange={event => this.onSearchChange(event.target.value)}
+                            />)}
+                          </Col>
+                        </Row>
                       </Container>
                     </div>
                     {!this.state.docked && (
                         <BottomNavigation
                             value={0}
-                            style={{'width': '100%', 'borderTop': 'solid 1px rgba(0,0,0,.125)'}}
+                            style={{width: '100%', borderTop: 'solid 1px rgba(0,0,0,.125)'}}
                             showLabels
                         >
                           <BottomNavigationAction icon={<HomeIcon />} />
