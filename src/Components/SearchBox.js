@@ -8,7 +8,8 @@ import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
-import PersonAddDisabledIcon from '@material-ui/icons/PersonAddDisabled';
+import { green } from '@material-ui/core/colors';
+import CheckIcon from '@material-ui/icons/Check';
 import IconButton from '@material-ui/core/IconButton';
 
 import { makeStyles } from '@material-ui/core/styles';
@@ -30,7 +31,8 @@ const useStyles = makeStyles({
 
 const SearchBox = props => {
     const [open, setOpen] = React.useState(false);
-    const [input, setInput] = React.useState("")
+    const [input, setInput] = React.useState("");
+    const [rawInput, setRawInput] = React.useState("");
     const [options, setOptions] = React.useState([]);
     const [results, setResults] = React.useState(false)
     const loading = open && options.length === 0 && !results;
@@ -53,7 +55,7 @@ const SearchBox = props => {
                     querySnapshot.forEach(function(doc) {
                         let data = doc.data();
                         data['following'] = (data.followers||[]).includes(props.user_id)
-                        if (doc.id != props.user_id){
+                        if (doc.id !== props.user_id){
                             searchResults.push({ ...data, ...{'id': doc.id}})
                         }
                     });
@@ -88,6 +90,16 @@ const SearchBox = props => {
                 option: classes.option,
             }}
             open={open}
+            getOptionLabel={(option) => option.spotify_display_name}
+            getOptionSelected={(option, value) => option.spotify_display_name === value.spotify_display_name}
+            options={options}
+            loading={loading}
+            disableCloseOnSelect={true}
+            openOnFocus={true}
+            value={null}
+            inputValue={rawInput}
+            freeSolo={true}
+            clearOnBlur
             onInputChange={(event, input, reason) => {
                 if (input.length===1){
                     setResults(false);
@@ -96,19 +108,19 @@ const SearchBox = props => {
                 }
                 if (input.length===0){
                     setOpen(false);
-                    setOptions([])
+                    setOptions([]);
+                    setRawInput("")
                 }
-
+                if(reason==="input"){
+                    setRawInput(input)
+                }
+            }}
+            onChange={(event, newValue) => {
+                setRawInput(rawInput);
             }}
             onClose={() => {
                 setOpen(false);
             }}
-            getOptionLabel={(option) => option.spotify_display_name}
-            getOptionSelected={(option, value) => option.spotify_display_name === value.spotify_display_name}
-            options={options}
-            loading={loading}
-            disableCloseOnSelect={true}
-            openOnFocus={true}
             renderOption={(option, { selected }) => (
                 <React.Fragment>
                     <ListItem>
@@ -123,15 +135,17 @@ const SearchBox = props => {
                             secondary={secondary ? 'Secondary text' : null}
                         />
                         <ListItemSecondaryAction>
-                            {!(props.loading_ids.includes(option.id)) && (
-                                <IconButton edge="end" aria-label="follow" onClick={() => {props.toggleFollow(option.id, option.following); option.following = !option.following;}}>
+                            {!props.loading_ids.includes(option.id) && (
+                                <React.Fragment>
                                     {!option.following && (
-                                        <PersonAddIcon color={"primary"}/>
+                                    <IconButton edge="end" aria-label="follow" onClick={() => {props.toggleFollow(option.id, option.following); option.following = !option.following;}}>
+                                            <PersonAddIcon color={"primary"}/>
+                                    </IconButton>
                                     )}
                                     {option.following && (
-                                        <PersonAddDisabledIcon color={"secondary"}/>
+                                        <CheckIcon style={{ color: green[500] }}/>
                                     )}
-                                </IconButton>
+                                </React.Fragment>
                             )}
                             {(props.loading_ids.includes(option.id)) && (
                                 <CircularProgress color="inherit" size={20} />
