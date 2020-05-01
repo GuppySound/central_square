@@ -41,8 +41,12 @@ const styles = {
 const mql = window.matchMedia(`(min-width: 800px)`);
 
 class App extends Component {
+  intervalId;
+  firebaseSubscription = () => {this.console.log("attempt unsubscribe")};
+
   constructor(props) {
     super(props);
+
     this.state = {
       code: null,
       user_id: localStorage.getItem('user_id'),
@@ -83,8 +87,14 @@ class App extends Component {
     }
   }
 
+  componentWillUnmount() {
+    clearTimeout(this.intervalID);
+    this.firebaseSubscription()
+  }
+
   clearSession() {
     localStorage.clear()
+    this.firebaseSubscription()
     this.setState({
       code: null,
       user_id: null,
@@ -109,6 +119,24 @@ class App extends Component {
     if (ev) {
       ev.preventDefault();
     }
+  }
+
+  getUser(user_id){
+    const userRef = db.collection(collection).doc(user_id);
+    const self = this;
+    userRef.get().then(function(doc) {
+      if (doc.exists) {
+        self.setState({
+          user: doc.data()
+        })
+        self.updateFollowing(user_id)
+      } else {
+        self.clearSession()
+        console.log("No such document!");
+      }
+    }).catch(function(error) {
+      console.log("Error getting document:", error);
+    });
   }
 
   createUser(code){
@@ -146,28 +174,10 @@ class App extends Component {
     });
   }
 
-  getUser(user_id){
-    const userRef = db.collection(collection).doc(user_id);
-    const self = this;
-    userRef.get().then(function(doc) {
-      if (doc.exists) {
-        self.setState({
-          user: doc.data()
-        })
-        self.updateFollowing(user_id)
-      } else {
-        self.clearSession()
-        console.log("No such document!");
-      }
-    }).catch(function(error) {
-      console.log("Error getting document:", error);
-    });
-  }
-
   getFollowing(user_id){
     const usersRef = db.collection(collection).where("followers", "array-contains", user_id);
     const self = this;
-    usersRef
+    this.firebaseSubscription = usersRef
         .onSnapshot(function(querySnapshot) {
           var following = [];
           querySnapshot.forEach(function(doc) {
@@ -181,6 +191,7 @@ class App extends Component {
             loading_ids: []
           })
         });
+    this.intervalID = setTimeout(()=>{this.updateFollowing(user_id)}, 10000);
   }
 
   toggleFollow(id, following){

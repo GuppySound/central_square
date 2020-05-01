@@ -105,7 +105,6 @@ const SearchBox = props => {
             }}
             getOptionLabel={(option) => option.spotify_display_name}
             getOptionSelected={(option, value) => option.spotify_display_name === value.spotify_display_name}
-            //getOptionDisabled={(option) => true}
             options={options}
             loading={loading}
             disableCloseOnSelect={true}
