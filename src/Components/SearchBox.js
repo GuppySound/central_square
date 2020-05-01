@@ -11,7 +11,6 @@ import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import PersonAddDisabledIcon from '@material-ui/icons/PersonAddDisabled';
 import IconButton from '@material-ui/core/IconButton';
 
-
 import { makeStyles } from '@material-ui/core/styles';
 
 import {db} from '../fire';
@@ -47,14 +46,14 @@ const SearchBox = props => {
         }
 
         (async () => {
-            const response = await db.collection("users_development").where("searchableIndex.".concat(input.toLowerCase()), "==", true)
+            const response = await db.collection(props.collection).where("searchableIndex.".concat(input.toLowerCase()), "==", true)
                 .get()
                 .then(function(querySnapshot) {
                     let searchResults = [];
                     querySnapshot.forEach(function(doc) {
                         let data = doc.data();
-                        data['following'] = (data.followers||[]).includes(props.id)
-                        if (doc.id != props.id){
+                        data['following'] = (data.followers||[]).includes(props.user_id)
+                        if (doc.id != props.user_id){
                             searchResults.push({ ...data, ...{'id': doc.id}})
                         }
                     });
@@ -84,7 +83,7 @@ const SearchBox = props => {
     return (
         <Autocomplete
             id="asynchronous-demo"
-            style={{ width: "80%" }}
+            style={{ width: "80%" , marginTop: "5%", alignSelf: "center", justifySelf: "center"}}
             classes={{
                 option: classes.option,
             }}
@@ -110,6 +109,7 @@ const SearchBox = props => {
             options={options}
             loading={loading}
             disableCloseOnSelect={true}
+            openOnFocus={true}
             renderOption={(option, { selected }) => (
                 <React.Fragment>
                     <ListItem>
