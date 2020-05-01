@@ -2,8 +2,15 @@ import React from "react";
 import {ListGroup} from "react-bootstrap";
 import Badge from '@material-ui/core/Badge';
 import Avatar from "@material-ui/core/Avatar";
+import IconButton from '@material-ui/core/IconButton';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
-import { withStyles } from '@material-ui/core/styles';
+import {makeStyles, withStyles} from '@material-ui/core/styles';
+import CircularProgress from "@material-ui/core/CircularProgress";
+
+const ITEM_HEIGHT = 48;
 
 const StyledBadge = withStyles((theme) => ({
     badge: {
@@ -34,7 +41,26 @@ const StyledBadge = withStyles((theme) => ({
     },
 }))(Badge);
 
+const useStyles = makeStyles({
+    root: {
+        outline: "none !important",
+    },
+});
+
 const Followee = props => {
+
+    const classes = useStyles();
+
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const open = Boolean(anchorEl);
+
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
 
     const playback = props.user.spotify_playback || {}
     return (
@@ -72,18 +98,67 @@ const Followee = props => {
                 </ListItemAvatar>
                 <div style={{
                     display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "flex-start"
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "100%"
                 }}>
-                    <div>
-                        {props.user.spotify_display_name}
+                    <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        alignItems: "flex-start"
+                    }}>
+                        <div>
+                            {props.user.spotify_display_name}
+                        </div>
+                        <div className={"listening-status"}>
+                            {playback.track_name} - {playback.artist_name}
+                        </div>
                     </div>
-                    <div className={"listening-status"}>
-                        {playback.track_name} - {playback.artist_name}
-                    </div>
-                </div>
 
+                        {!props.loading_ids.includes(props.user.id) && (
+                            <div>
+                            <IconButton
+                                aria-label="more"
+                                aria-controls="long-menu"
+                                aria-haspopup="true"
+                                classes={{root: classes.root}}
+                                onClick={handleClick}
+                            >
+                                <MoreVertIcon />
+                            </IconButton>
+                            <Menu
+                            id="long-menu"
+                            anchorEl={anchorEl}
+                            keepMounted
+                            open={open}
+                            onClose={handleClose}
+                            PaperProps={{
+                            style: {
+                                maxHeight: ITEM_HEIGHT * 3.5,
+                                width: '15ch',
+                            },
+                        }}
+                            >
+                            <MenuItem key={"tune_in"} selected={false} onClick={handleClose}>
+                            Tune In
+                            </MenuItem>
+                            <MenuItem
+                            key={"unfollow"}
+                            selected={false}
+                            onClick={() => {props.toggleFollow(props.user.id, true); handleClose()}}>
+                            Unfollow
+                            </MenuItem>
+                            </Menu>
+                            </div>
+                        )}
+                        {props.loading_ids.includes(props.user.id) && (
+                            <div>
+                            <CircularProgress color="inherit" size={20} />
+                            </div>
+                        )}
+                </div>
             </div>
         </ListGroup.Item>
     );

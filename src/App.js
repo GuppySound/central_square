@@ -129,7 +129,7 @@ class App extends Component {
         self.setState({
           user: doc.data()
         })
-        self.updateFollowing(user_id)
+        self.updateFollowing(user_id, false)
       } else {
         self.clearSession()
         console.log("No such document!");
@@ -160,13 +160,15 @@ class App extends Component {
     });
   }
 
-  updateFollowing(user_id){
+  updateFollowing(user_id, refresh){
     $.ajax({
       url: `${wp_URL}/api/users/updateFollowing`,
       type: "POST",
       data: $.param({"id": user_id}),
       success: data => {
-        this.getFollowing(user_id)
+        if (!refresh){
+          this.getFollowing(user_id)
+        }
       },
       error: error_msg => {
         console.log(error_msg)
@@ -179,9 +181,9 @@ class App extends Component {
     const self = this;
     this.firebaseSubscription = usersRef
         .onSnapshot(function(querySnapshot) {
-          var following = [];
+          let following = [];
           querySnapshot.forEach(function(doc) {
-            following.push(doc.data());
+            following.push({ ...doc.data(), ...{'id': doc.id}});
           });
           following.sort(function(a, b) {
             return (b.spotify_playback||{}).is_active - (a.spotify_playback||{}).is_active;
@@ -191,7 +193,7 @@ class App extends Component {
             loading_ids: []
           })
         });
-    this.intervalID = setTimeout(()=>{this.updateFollowing(user_id)}, 10000);
+    this.intervalID = setTimeout(()=>{this.updateFollowing(user_id, true)}, 10000);
   }
 
   toggleFollow(id, following){
@@ -246,6 +248,8 @@ class App extends Component {
     const following = this.state.following ? this.state.following.map((f, index) => <Followee
         key={index}
         user={f}
+        toggleFollow={this.toggleFollow}
+        loading_ids={this.state.loading_ids}
     >
     </Followee>) : [];
 
