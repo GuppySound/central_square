@@ -129,7 +129,7 @@ class App extends Component {
         self.setState({
           user: doc.data()
         })
-        self.updateFollowing(user_id, false)
+        self.updateFollowing(user_id)
       } else {
         self.clearSession()
         console.log("No such document!");
@@ -160,15 +160,14 @@ class App extends Component {
     });
   }
 
-  updateFollowing(user_id, refresh){
+  updateFollowing(user_id){
     $.ajax({
       url: `${wp_URL}/api/users/updateFollowing`,
       type: "POST",
       data: $.param({"id": user_id}),
       success: data => {
-        if (!refresh){
           this.getFollowing(user_id)
-        }
+          this.intervalID = setTimeout(()=>{this.updateFollowing(user_id)}, 10000);
       },
       error: error_msg => {
         console.log(error_msg)
@@ -193,7 +192,7 @@ class App extends Component {
             loading_ids: []
           })
         });
-    this.intervalID = setTimeout(()=>{this.updateFollowing(user_id, true)}, 10000);
+
   }
 
   toggleFollow(id, following){
