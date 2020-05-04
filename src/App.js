@@ -19,9 +19,9 @@ require('dotenv').config();
 const local = process.env.REACT_APP_IS_LOCAL==="true"
 
 let wp_URL = (local ?
-    "http://".concat(window.location.hostname.concat(":").concat(process.env.REACT_APP_PORT)) : process.env.REACT_APP_WP_URL)
+    "http://".concat(window.location.hostname.concat(":").concat(process.env.REACT_APP_PORT)) :
+    process.env.REACT_APP_WP_URL)
 
-const collection = local ? "users_development" : "users_production"
 const queryString = require('query-string');
 const redirectUri = window.location.href.split("?")[0]
 
@@ -122,7 +122,7 @@ class App extends Component {
   }
 
   getUser(user_id){
-    const userRef = db.collection(collection).doc(user_id);
+    const userRef = db.collection("users").doc(user_id);
     const self = this;
     userRef.get().then(function(doc) {
       if (doc.exists) {
@@ -176,7 +176,7 @@ class App extends Component {
   }
 
   getFollowing(user_id){
-    const usersRef = db.collection(collection).where("followers", "array-contains", user_id);
+    const usersRef = db.collection("users").where("followers", "array-contains", user_id);
     const self = this;
     this.firebaseSubscription = usersRef
         .onSnapshot(function(querySnapshot) {
@@ -198,10 +198,9 @@ class App extends Component {
   toggleFollow(id, following){
     const joined = this.state.loading_ids.concat(id);
     this.setState({ loading_ids: joined })
-    const _suffix = local ? "Development" : ""
     const cloudFunction = following ?
-        functions.httpsCallable('removeFollower'.concat(_suffix)) :
-        functions.httpsCallable('addFollower'.concat(_suffix));
+        functions.httpsCallable('removeFollower') :
+        functions.httpsCallable('addFollower');
     cloudFunction({follower_id: this.state.user_id, followee_id: id}).then(function(result) {
       return true
     }).catch(function(error) {
@@ -291,7 +290,6 @@ class App extends Component {
                                     user_id={this.state.user_id}
                                     loading_ids={this.state.loading_ids}
                                     toggleFollow={this.toggleFollow}
-                                    collection={collection}
                                 ></SearchBox>
                             )}
                           </Col>
@@ -308,7 +306,6 @@ class App extends Component {
                                     user_id={this.state.user_id}
                                     loading_ids={this.state.loading_ids}
                                     toggleFollow={this.toggleFollow}
-                                    collection={collection}
                                 ></SearchBox>
                               </Col>
                           )}

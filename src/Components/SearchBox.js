@@ -48,7 +48,7 @@ const SearchBox = props => {
         }
 
         (async () => {
-            const response = await db.collection(props.collection).where("searchableIndex.".concat(input.toLowerCase()), "==", true)
+            const response = await db.collection("users").where("searchableIndex.".concat(input.toLowerCase()), "==", true)
                 .get()
                 .then(function(querySnapshot) {
                     let searchResults = [];
