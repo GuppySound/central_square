@@ -63,8 +63,13 @@ const Followee = props => {
     };
 
     const playback = props.user.spotify_playback || {}
+    const listening = (props.user.listeners||[]).includes(props.user_id)
     return (
-        <ListGroup.Item>
+        <ListGroup.Item
+            style={{
+                backgroundColor: listening ? '#E8E8E8' : '#fff',
+            }}
+        >
             <div style={
                 {
                     display: "flex",
@@ -141,13 +146,19 @@ const Followee = props => {
                             },
                         }}
                             >
-                            <MenuItem key={"tune_in"} selected={false} onClick={handleClose}>
-                            Tune In
+                            <MenuItem
+                                key={"tune_in"}
+                                selected={false}
+                                disabled={!playback.is_playing && !listening}
+                                onClick={() => {props.toggleListen(props.user.id, listening); handleClose()}}
+                            >
+                                Tune {listening ? "Out" : "In"}
                             </MenuItem>
                             <MenuItem
-                            key={"unfollow"}
-                            selected={false}
-                            onClick={() => {props.toggleFollow(props.user.id, true); handleClose()}}>
+                                key={"unfollow"}
+                                selected={false}
+                                onClick={() => {props.toggleFollow(props.user.id, true); handleClose()}}
+                            >
                             Unfollow
                             </MenuItem>
                             </Menu>

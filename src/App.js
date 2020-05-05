@@ -42,7 +42,7 @@ const mql = window.matchMedia(`(min-width: 800px)`);
 
 class App extends Component {
   intervalId;
-  firebaseSubscription = () => {this.console.log("attempt unsubscribe")};
+  firebaseSubscription = () => {console.log("attempt unsubscribe")};
 
   constructor(props) {
     super(props);
@@ -65,6 +65,7 @@ class App extends Component {
     this.getFollowing = this.getFollowing.bind(this);
     this.clearSession = this.clearSession.bind(this);
     this.toggleFollow = this.toggleFollow.bind(this);
+    this.toggleListen = this.toggleListen.bind(this);
     this.handleTabChange = this.handleTabChange.bind(this);
 
     this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
@@ -178,6 +179,7 @@ class App extends Component {
   getFollowing(user_id){
     const usersRef = db.collection("users").where("followers", "array-contains", user_id);
     const self = this;
+    this.firebaseSubscription()
     this.firebaseSubscription = usersRef
         .onSnapshot(function(querySnapshot) {
           let following = [];
@@ -185,7 +187,13 @@ class App extends Component {
             following.push({ ...doc.data(), ...{'id': doc.id}});
           });
           following.sort(function(a, b) {
-            return (b.spotify_playback||{}).is_active - (a.spotify_playback||{}).is_active;
+            if((a.listeners||[]).includes(user_id) > (b.listeners||[]).includes(user_id)) return -1;
+            if((a.listeners||[]).includes(user_id) < (b.listeners||[]).includes(user_id)) return 1;
+
+            if((a.spotify_playback||{}).is_active > (b.spotify_playback||{}).is_active) return -1;
+            if((a.spotify_playback||{}).is_active < (b.spotify_playback||{}).is_active) return 1;
+
+
           });
           self.setState({
             following: following,
@@ -204,6 +212,23 @@ class App extends Component {
     cloudFunction({follower_id: this.state.user_id, followee_id: id}).then(function(result) {
       return true
     }).catch(function(error) {
+      console.log(error)
+      return false
+    });
+  }
+
+  toggleListen(id, listening){
+    const joined = this.state.loading_ids.concat(id);
+    this.setState({
+      loading_ids: joined,
+    })
+    const cloudFunction = listening ?
+        functions.httpsCallable('removeListener') :
+        functions.httpsCallable('addListener');
+    cloudFunction({listener_id: this.state.user_id, listenee_id: id}).then(function(result) {
+      return true
+    }).catch(function(error) {
+      console.log(error)
       return false
     });
   }
@@ -245,9 +270,12 @@ class App extends Component {
 
     const following = this.state.following ? this.state.following.map((f, index) => <Followee
         key={index}
+        user_id={this.state.user_id}
         user={f}
         toggleFollow={this.toggleFollow}
+        toggleListen={this.toggleListen}
         loading_ids={this.state.loading_ids}
+        listening_id={this.state.listening_id}
     >
     </Followee>) : [];
 
@@ -263,7 +291,7 @@ class App extends Component {
                 <Sidebar {...sidebarProps}>
                   <MaterialTitlePanel title={contentHeader}>
                     <div style={styles.content}>
-                      <Container style={{"padding": 0}}>
+                      <Container style={{padding: 0, margin: 0}}>
                         <Row style={{margin: 0, height: "100%"}}>
                           <Col
                               xs={12} sm={12} md={7}
