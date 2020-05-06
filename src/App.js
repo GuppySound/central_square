@@ -4,15 +4,20 @@ import { authEndpoint, clientId, scopes } from "./config";
 import "./App.css";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Container, Button, Spinner, Row, Col, ListGroup} from 'react-bootstrap';
+import {Container, Button, Spinner, Row, Col, ListGroup, Image} from 'react-bootstrap';
 import Sidebar from "react-sidebar";
+
+import Typography from "@material-ui/core/Typography";
 
 import MaterialTitlePanel from "./Components/TitlePanel";
 import SidebarContent from "./Components/SidebarContent";
 import Followee from "./Components/Followee";
 import SearchBox from "./Components/SearchBox";
 import BottomNavigationComponent from "./Components/BottomNavigation";
+import TabsNavigationComponent from "./Components/TabsNavigation";
+import Follower from "./Components/Follower";
 import {db, functions} from './fire';
+import Logo from './logo.png'
 
 require('dotenv').config();
 
@@ -55,7 +60,9 @@ class App extends Component {
       open: false,
       user: null,
       following: null,
-      tab: "home",
+      followers: null,
+      home_tab_index: 0,
+      bottom_tab: "home",
       loading_ids: [],
     };
 
@@ -63,10 +70,12 @@ class App extends Component {
     this.updateFollowing = this.updateFollowing.bind(this)
     this.getUser = this.getUser.bind(this);
     this.getFollowing = this.getFollowing.bind(this);
+    this.getFollowers = this.getFollowers.bind(this);
     this.clearSession = this.clearSession.bind(this);
     this.toggleFollow = this.toggleFollow.bind(this);
     this.toggleListen = this.toggleListen.bind(this);
-    this.handleTabChange = this.handleTabChange.bind(this);
+    this.handleHomeTabChange = this.handleHomeTabChange.bind(this);
+    this.handleBottomTabChange = this.handleBottomTabChange.bind(this);
 
     this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
     this.toggleOpen = this.toggleOpen.bind(this);
@@ -131,6 +140,7 @@ class App extends Component {
           user: doc.data()
         })
         self.updateFollowing(user_id)
+        self.getFollowers(user_id)
       } else {
         self.clearSession()
         console.log("No such document!");
@@ -192,16 +202,30 @@ class App extends Component {
 
             if((a.spotify_playback||{}).is_active > (b.spotify_playback||{}).is_active) return -1;
             if((a.spotify_playback||{}).is_active < (b.spotify_playback||{}).is_active) return 1;
-
-
           });
           self.setState({
             following: following,
             loading_ids: []
           })
         });
-
   }
+
+  getFollowers(user_id){
+    const usersRef = db.collection("users").where("following", "array-contains", user_id);
+    const self = this;
+    usersRef
+        .onSnapshot(function(querySnapshot) {
+          let followers = [];
+          querySnapshot.forEach(function(doc) {
+            followers.push({ ...doc.data(), ...{'id': doc.id}});
+          });
+          self.setState({
+            followers: followers,
+            loading_ids: []
+          })
+        });
+  }
+
 
   toggleFollow(id, following){
     const joined = this.state.loading_ids.concat(id);
@@ -233,9 +257,15 @@ class App extends Component {
     });
   }
 
-  handleTabChange(event, newValue){
+  handleHomeTabChange(event, newValue){
     this.setState({
-      tab: newValue
+      home_tab_index: newValue
+    })
+  }
+
+  handleBottomTabChange(event, newValue){
+    this.setState({
+      bottom_tab: newValue
     })
   }
 
@@ -257,7 +287,7 @@ class App extends Component {
               =
             </a>
         )}
-          <span> Following</span>
+          <span>{this.state.bottom_tab.charAt(0).toUpperCase() + this.state.bottom_tab.slice(1)}</span>
       </span>
     );
 
@@ -279,13 +309,37 @@ class App extends Component {
     >
     </Followee>) : [];
 
+    const followers = this.state.followers ? this.state.followers.map((f, index) => <Follower
+        key={index}
+        user_id={this.state.user_id}
+        user={f}
+        toggleFollow={this.toggleFollow}
+        loading_ids={this.state.loading_ids}
+        switchFollow={()=>f.following=!f.following}
+    />) : [];
+
     return (
         <div className="App">
             {!this.state.code && !this.state.user_id && (
+                <React.Fragment>
+                  <div style={{maxHeight: 150, maxWidth: 150, marginBottom: '1%'}}>
+                    <Image src={Logo} roundedCircle fluid/>
+                  </div>
+                  <Typography variant="h4" gutterBottom>
+                    Guppy
+                  </Typography>
+                  <Typography variant="h5" gutterBottom>
+                   Tune in, not out
+                  </Typography>
+                  <Typography variant="subtitle1" gutterBottom>
+                    You listen to music on Spotify, we'll handle the rest
+                  </Typography>
                 <Button
+                    style={{marginTop: '3%'}}
                     href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join(
                     "%20"
-                )}&response_type=code&show_dialog=true`}>Connect with Spotify</Button>
+                )}&response_type=code&show_dialog=true`}>Continue with Spotify</Button>
+                </React.Fragment>
             )}
             {this.state.user && (
                 <Sidebar {...sidebarProps}>
@@ -308,17 +362,28 @@ class App extends Component {
                             {!this.state.following && (
                                   <Spinner animation="grow" variant="primary" style={{marginTop: "10%"}}/>
                             )}
-                            {this.state.following && this.state.tab==="home" && (
-                                <ListGroup variant="flush" style={{width: "100%"}}>
-                                  {following}
-                                </ListGroup>
+                            {this.state.following && this.state.bottom_tab==="home" && (
+                                <TabsNavigationComponent
+                                    first_tab={
+                                      <ListGroup variant="flush" style={{width: "100%"}}>
+                                        {following}
+                                      </ListGroup>
+                                    }
+                                    second_tab={
+                                      <ListGroup variant="flush" style={{width: "100%"}}>
+                                        {followers}
+                                      </ListGroup>
+                                    }
+                                    value={this.state.home_tab_index}
+                                    handleTabChange={this.handleHomeTabChange}
+                                />
                             )}
-                            {this.state.following && this.state.tab==="search" && (
+                            {this.state.following && this.state.bottom_tab==="search" && (
                                 <SearchBox
                                     user_id={this.state.user_id}
                                     loading_ids={this.state.loading_ids}
                                     toggleFollow={this.toggleFollow}
-                                ></SearchBox>
+                                />
                             )}
                           </Col>
                           {this.state.docked && (
@@ -334,7 +399,7 @@ class App extends Component {
                                     user_id={this.state.user_id}
                                     loading_ids={this.state.loading_ids}
                                     toggleFollow={this.toggleFollow}
-                                ></SearchBox>
+                                />
                               </Col>
                           )}
                         </Row>
@@ -342,9 +407,9 @@ class App extends Component {
                     </div>
                     {!this.state.docked && (
                         <BottomNavigationComponent
-                            tab={this.state.tab}
-                            handleTabChange={this.handleTabChange}
-                        ></BottomNavigationComponent>
+                            tab={this.state.bottom_tab}
+                            handleTabChange={this.handleBottomTabChange}
+                        />
                     )}
                   </MaterialTitlePanel>
                 </Sidebar>
