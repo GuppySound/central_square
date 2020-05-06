@@ -56,12 +56,6 @@ const SidebarContent = props => {
                         </ListItemIcon>
                         <ListItemText primary="Home" />
                     </ListItemLink>
-                    <ListItemLink href="#followers">
-                        <ListItemIcon>
-                            <GroupIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Followers" />
-                    </ListItemLink>
                 </List>
                 <Divider />
                 <List component="nav" aria-label="secondary mailbox folders">

@@ -2,18 +2,10 @@ import React from 'react';
 import TextField from '@material-ui/core/TextField';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
-import ListItemText from '@material-ui/core/ListItemText';
-import Avatar from '@material-ui/core/Avatar';
-import PersonAddIcon from '@material-ui/icons/PersonAdd';
-import { green } from '@material-ui/core/colors';
-import CheckIcon from '@material-ui/icons/Check';
-import IconButton from '@material-ui/core/IconButton';
 
 import { makeStyles } from '@material-ui/core/styles';
 
+import SearchResult from "./SearchResult";
 import {db} from '../fire';
 
 function sleep(delay = 0) {
@@ -123,35 +115,15 @@ const SearchBox = props => {
             }}
             renderOption={(option, { selected }) => (
                 <React.Fragment>
-                    <ListItem>
-                        <ListItemAvatar>
-                            <Avatar alt={option.spotify_display_name} src={option.spotify_profile_picture} style={{
-                                height: 40,
-                                width: 40,
-                            }} />
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary={option.spotify_display_name}
-                            secondary={secondary ? 'Secondary text' : null}
-                        />
-                        <ListItemSecondaryAction>
-                            {!props.loading_ids.includes(option.id) && (
-                                <React.Fragment>
-                                    {!option.following && (
-                                    <IconButton edge="end" aria-label="follow" onClick={() => {props.toggleFollow(option.id, option.following); option.following = !option.following;}}>
-                                            <PersonAddIcon color={"primary"}/>
-                                    </IconButton>
-                                    )}
-                                    {option.following && (
-                                        <CheckIcon style={{ color: green[500] }}/>
-                                    )}
-                                </React.Fragment>
-                            )}
-                            {(props.loading_ids.includes(option.id)) && (
-                                <CircularProgress color="inherit" size={20} />
-                            )}
-                        </ListItemSecondaryAction>
-                    </ListItem>
+                    <SearchResult
+                        spotify_display_name={option.spotify_display_name}
+                        spotify_profile_picture={option.spotify_profile_picture}
+                        loading_ids={props.loading_ids}
+                        id={option.id}
+                        following={option.following}
+                        toggleFollow={props.toggleFollow}
+                        switchFollow={()=>option.following=!option.following}
+                    />
                 </React.Fragment>
             )}
             renderInput={(params) => (
