@@ -63,7 +63,8 @@ class App extends Component {
       followers: null,
       home_tab_index: 0,
       bottom_tab: "home",
-      loading_ids: [],
+      following_loading_ids: [],
+      followers_loading_ids: []
     };
 
     this.createUser = this.createUser.bind(this);
@@ -205,7 +206,7 @@ class App extends Component {
           });
           self.setState({
             following: following,
-            loading_ids: []
+            following_loading_ids: []
           })
         });
   }
@@ -221,15 +222,19 @@ class App extends Component {
           });
           self.setState({
             followers: followers,
-            loading_ids: []
+            followers_loading_ids: []
           })
         });
   }
 
 
   toggleFollow(id, following){
-    const joined = this.state.loading_ids.concat(id);
-    this.setState({ loading_ids: joined })
+    const following_joined = this.state.following_loading_ids.concat(id);
+    const followers_joined = this.state.followers_loading_ids.concat(id);
+    this.setState({
+      following_loading_ids: following_joined,
+      followers_loading_ids: followers_joined
+    })
     const cloudFunction = following ?
         functions.httpsCallable('removeFollower') :
         functions.httpsCallable('addFollower');
@@ -242,9 +247,9 @@ class App extends Component {
   }
 
   toggleListen(id, listening){
-    const joined = this.state.loading_ids.concat(id);
+    const joined = this.state.following_loading_ids.concat(id);
     this.setState({
-      loading_ids: joined,
+      following_loading_ids: joined,
     })
     const cloudFunction = listening ?
         functions.httpsCallable('removeListener') :
@@ -304,7 +309,7 @@ class App extends Component {
         user={f}
         toggleFollow={this.toggleFollow}
         toggleListen={this.toggleListen}
-        loading_ids={this.state.loading_ids}
+        loading_ids={this.state.following_loading_ids}
         listening_id={this.state.listening_id}
     >
     </Followee>) : [];
@@ -314,7 +319,7 @@ class App extends Component {
         user_id={this.state.user_id}
         user={f}
         toggleFollow={this.toggleFollow}
-        loading_ids={this.state.loading_ids}
+        loading_ids={this.state.followers_loading_ids}
         switchFollow={()=>f.following=!f.following}
     />) : [];
 
@@ -381,7 +386,7 @@ class App extends Component {
                             {this.state.following && this.state.bottom_tab==="search" && (
                                 <SearchBox
                                     user_id={this.state.user_id}
-                                    loading_ids={this.state.loading_ids}
+                                    loading_ids={this.state.following_loading_ids}
                                     toggleFollow={this.toggleFollow}
                                 />
                             )}
@@ -397,7 +402,7 @@ class App extends Component {
                                    }}>
                                 <SearchBox
                                     user_id={this.state.user_id}
-                                    loading_ids={this.state.loading_ids}
+                                    loading_ids={this.state.following_loading_ids}
                                     toggleFollow={this.toggleFollow}
                                 />
                               </Col>
