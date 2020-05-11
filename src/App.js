@@ -48,10 +48,10 @@ const mql = window.matchMedia(`(min-width: 800px)`);
 
 class App extends Component {
   intervalId;
-  userSubscription = () => {console.log("attempt unsubscribe")};
+  //userSubscription = () => {console.log("attempt unsubscribe")};
   followingSubscription = () => {console.log("attempt unsubscribe")};
   followersSubscription = () => {console.log("attempt unsubscribe")};
-  recommendedSubscription = () => {console.log("attempt unsubscribe")};
+  //recommendedSubscription = () => {console.log("attempt unsubscribe")};
 
   constructor(props) {
     super(props);
@@ -141,6 +141,22 @@ class App extends Component {
   getUser(user_id){
     const userRef = db.collection("users").doc(user_id);
     const self = this;
+    userRef.get().then(function(doc) {
+      if (doc.exists) {
+        self.setState({
+          user: doc.data()
+        })
+        self.updateFollowing(user_id)
+        self.getFollowers(user_id)
+      } else {
+        self.clearSession()
+        console.log("No such document!");
+      }
+    }).catch(function(error) {
+      console.log("Error getting document:", error);
+    });
+
+    /*
     this.userSubscription();
     this.userSubscription = userRef.onSnapshot(function(doc) {
       if (doc.exists) {
@@ -149,12 +165,13 @@ class App extends Component {
         })
         self.updateFollowing(user_id, false)
         self.getFollowers(user_id)
-        self.getRecommendedFollows(doc.data())
+        //self.getRecommendedFollows(doc.data())
       } else {
         self.clearSession()
         console.log("No such document!");
       }
     })
+     */
   }
 
   createUser(code){
