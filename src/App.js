@@ -5,7 +5,7 @@ import { authEndpoint, clientId, scopes } from "./config";
 import "./App.css";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Container, Button, Spinner, Row, Col, ListGroup, Image} from 'react-bootstrap';
+import {Container, Button, Spinner, Row, Col, ListGroup, Image, Alert} from 'react-bootstrap';
 import Sidebar from "react-sidebar";
 
 import Typography from "@material-ui/core/Typography";
@@ -48,16 +48,18 @@ const mql = window.matchMedia(`(min-width: 800px)`);
 
 class App extends Component {
   intervalId;
-  userSubscription = () => {console.log("attempt unsubscribe")};
+  //userSubscription = () => {console.log("attempt unsubscribe")};
   followingSubscription = () => {console.log("attempt unsubscribe")};
   followersSubscription = () => {console.log("attempt unsubscribe")};
-  recommendedSubscription = () => {console.log("attempt unsubscribe")};
+  //recommendedSubscription = () => {console.log("attempt unsubscribe")};
 
   constructor(props) {
     super(props);
 
     this.state = {
       code: null,
+      alert: null,
+      alert_subtext: "",
       user_id: localStorage.getItem('user_id'),
       location: this.props.location,
       docked: mql.matches,
@@ -106,12 +108,14 @@ class App extends Component {
 
   componentWillUnmount() {
     clearTimeout(this.intervalID);
-    this.firebaseSubscription()
+    this.followersSubscription();
+    this.followingSubscription();
   }
 
   clearSession() {
     localStorage.clear()
-    this.firebaseSubscription()
+    this.followersSubscription();
+    this.followingSubscription();
     this.setState({
       code: null,
       user_id: null,
@@ -141,6 +145,22 @@ class App extends Component {
   getUser(user_id){
     const userRef = db.collection("users").doc(user_id);
     const self = this;
+    userRef.get().then(function(doc) {
+      if (doc.exists) {
+        self.setState({
+          user: doc.data()
+        })
+        self.updateFollowing(user_id)
+        self.getFollowers(user_id)
+      } else {
+        self.clearSession()
+        console.log("No such document!");
+      }
+    }).catch(function(error) {
+      console.log("Error getting document:", error);
+    });
+
+    /*
     this.userSubscription();
     this.userSubscription = userRef.onSnapshot(function(doc) {
       if (doc.exists) {
@@ -149,12 +169,13 @@ class App extends Component {
         })
         self.updateFollowing(user_id, false)
         self.getFollowers(user_id)
-        self.getRecommendedFollows(doc.data())
+        //self.getRecommendedFollows(doc.data())
       } else {
         self.clearSession()
         console.log("No such document!");
       }
     })
+     */
   }
 
   createUser(code){
@@ -184,7 +205,7 @@ class App extends Component {
       type: "POST",
       data: $.param({"id": user_id}),
       success: data => {
-        if(update) this.getFollowing(user_id)
+        if(!update) this.getFollowing(user_id)
         this.intervalID = setTimeout(()=>{this.updateFollowing(user_id, true)}, 10000);
       },
       error: error_msg => {
@@ -212,7 +233,6 @@ class App extends Component {
           });
           self.setState({
             following: following,
-            following_loading_ids: []
           })
         });
   }
@@ -229,7 +249,6 @@ class App extends Component {
           });
           self.setState({
             followers: followers,
-            followers_loading_ids: []
           })
         });
   }
@@ -262,10 +281,15 @@ class App extends Component {
       following_loading_ids: following_joined,
       followers_loading_ids: followers_joined
     })
+    const self = this;
     const cloudFunction = following ?
         functions.httpsCallable('removeFollower') :
         functions.httpsCallable('addFollower');
     cloudFunction({follower_id: this.state.user_id, followee_id: id}).then(function(result) {
+      self.setState({
+        following_loading_ids: [],
+        follower_loading_ids: []
+      })
       return true
     }).catch(function(error) {
       console.log(error)
@@ -278,15 +302,44 @@ class App extends Component {
     this.setState({
       following_loading_ids: joined,
     })
-    const cloudFunction = listening ?
-        functions.httpsCallable('removeListener') :
-        functions.httpsCallable('addListener');
-    cloudFunction({listener_id: this.state.user_id, listenee_id: id}).then(function(result) {
-      return true
-    }).catch(function(error) {
-      console.log(error)
-      return false
-    });
+    const self = this;
+    if (!listening){
+      $.ajax({
+        url: `${wp_URL}/api/spotify/playback/transfer/${id}/${self.state.user_id}`,
+        type: "POST",
+        success: data => {
+          if ([200, 204].includes(data.status_code)){
+            functions.httpsCallable('clearListeners')({listener_id: this.state.user_id}).then(function(result){
+              functions.httpsCallable('addListener')({listener_id: self.state.user_id, listenee_id: id}).then(function(result) {
+                self.clearAlert();
+                self.setState({
+                  following_loading_ids: [],
+                })
+              })
+            })
+          } else if (data.status_code === 404){
+            self.setState({
+              following_loading_ids: [],
+              alert: "Whoops! Something went wrong",
+              alert_subtext: "Open Spotify on any device and start playing something before trying again"
+            })
+          }
+        },
+        error: error_msg => {
+          self.setState({
+            following_loading_ids: [],
+          })
+          console.log(error_msg)
+        }
+      });
+    }
+    else{
+      functions.httpsCallable('removeListener')({listener_id: self.state.user_id, listenee_id: id}).then(function(result) {
+        self.setState({
+          following_loading_ids: [],
+        })
+      })
+    }
   }
 
   handleHomeTabChange(event, newValue){
@@ -298,6 +351,13 @@ class App extends Component {
   handleBottomTabChange(event, newValue){
     this.setState({
       bottom_tab: newValue
+    })
+  }
+
+  clearAlert = () => {
+    this.setState({
+      alert: null,
+      alert_subtext: ""
     })
   }
 
@@ -406,6 +466,15 @@ class App extends Component {
                             {this.state.following && this.state.bottom_tab==="home" && (
                                 <TabsNavigationComponent
                                     first_tab={
+                                      <React.Fragment>
+                                        {this.state.alert && (
+                                            <Alert variant="danger" onClose={this.clearAlert} dismissible>
+                                              <Alert.Heading>{this.state.alert}</Alert.Heading>
+                                              <p>
+                                                {this.state.alert_subtext}
+                                              </p>
+                                            </Alert>
+                                        )}
                                       <ListGroup
                                           variant="flush"
                                           style={{
@@ -414,6 +483,7 @@ class App extends Component {
                                           }}>
                                         {following}
                                       </ListGroup>
+                                      </React.Fragment>
                                     }
                                     second_tab={
                                       <ListGroup variant="flush" style={{width: "100%"}}>
