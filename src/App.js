@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import * as $ from "jquery";
+import * as _ from "underscore";
 import { authEndpoint, clientId, scopes } from "./config";
 import "./App.css";
 
@@ -47,7 +48,10 @@ const mql = window.matchMedia(`(min-width: 800px)`);
 
 class App extends Component {
   intervalId;
-  firebaseSubscription = () => {console.log("attempt unsubscribe")};
+  userSubscription = () => {console.log("attempt unsubscribe")};
+  followingSubscription = () => {console.log("attempt unsubscribe")};
+  followersSubscription = () => {console.log("attempt unsubscribe")};
+  recommendedSubscription = () => {console.log("attempt unsubscribe")};
 
   constructor(props) {
     super(props);
@@ -61,10 +65,11 @@ class App extends Component {
       user: null,
       following: null,
       followers: null,
+      recommended_follows: null,
       home_tab_index: 0,
       bottom_tab: "home",
       following_loading_ids: [],
-      followers_loading_ids: []
+      followers_loading_ids: [],
     };
 
     this.createUser = this.createUser.bind(this);
@@ -72,6 +77,7 @@ class App extends Component {
     this.getUser = this.getUser.bind(this);
     this.getFollowing = this.getFollowing.bind(this);
     this.getFollowers = this.getFollowers.bind(this);
+    this.getRecommendedFollows = this.getRecommendedFollows.bind(this);
     this.clearSession = this.clearSession.bind(this);
     this.toggleFollow = this.toggleFollow.bind(this);
     this.toggleListen = this.toggleListen.bind(this);
@@ -135,20 +141,20 @@ class App extends Component {
   getUser(user_id){
     const userRef = db.collection("users").doc(user_id);
     const self = this;
-    userRef.get().then(function(doc) {
+    this.userSubscription();
+    this.userSubscription = userRef.onSnapshot(function(doc) {
       if (doc.exists) {
         self.setState({
           user: doc.data()
         })
-        self.updateFollowing(user_id)
+        self.updateFollowing(user_id, false)
         self.getFollowers(user_id)
+        self.getRecommendedFollows(doc.data())
       } else {
         self.clearSession()
         console.log("No such document!");
       }
-    }).catch(function(error) {
-      console.log("Error getting document:", error);
-    });
+    })
   }
 
   createUser(code){
@@ -172,14 +178,14 @@ class App extends Component {
     });
   }
 
-  updateFollowing(user_id){
+  updateFollowing(user_id, update){
     $.ajax({
       url: `${wp_URL}/api/users/updateFollowing`,
       type: "POST",
       data: $.param({"id": user_id}),
       success: data => {
-          this.getFollowing(user_id)
-          this.intervalID = setTimeout(()=>{this.updateFollowing(user_id)}, 10000);
+        if(update) this.getFollowing(user_id)
+        this.intervalID = setTimeout(()=>{this.updateFollowing(user_id, true)}, 10000);
       },
       error: error_msg => {
         console.log(error_msg)
@@ -190,8 +196,8 @@ class App extends Component {
   getFollowing(user_id){
     const usersRef = db.collection("users").where("followers", "array-contains", user_id);
     const self = this;
-    this.firebaseSubscription()
-    this.firebaseSubscription = usersRef
+    this.followingSubscription()
+    this.followingSubscription = usersRef
         .onSnapshot(function(querySnapshot) {
           let following = [];
           querySnapshot.forEach(function(doc) {
@@ -214,7 +220,8 @@ class App extends Component {
   getFollowers(user_id){
     const usersRef = db.collection("users").where("following", "array-contains", user_id);
     const self = this;
-    usersRef
+    this.followersSubscription()
+    this.followersSubscription = usersRef
         .onSnapshot(function(querySnapshot) {
           let followers = [];
           querySnapshot.forEach(function(doc) {
@@ -227,6 +234,26 @@ class App extends Component {
         });
   }
 
+  getRecommendedFollows(user){
+    const following = user.following || []
+    if(following.length>0){
+      const usersRef = db.collection("users").where(
+          "followers", "array-contains-any", _.sample(following, 10));
+      const self = this;
+      this.recommendedSubscription()
+      this.recommendedSubscription = usersRef
+          .onSnapshot(function(querySnapshot) {
+            let recommended_follows = [];
+            querySnapshot.forEach(function(doc) {
+              if(!following.includes(doc.id))
+                recommended_follows.push({ ...doc.data(), ...{'id': doc.id}});
+            });
+            self.setState({
+              recommended_follows: recommended_follows,
+            })
+          });
+    }
+  }
 
   toggleFollow(id, following){
     const following_joined = this.state.following_loading_ids.concat(id);
@@ -323,6 +350,15 @@ class App extends Component {
         switchFollow={()=>f.following=!f.following}
     />) : [];
 
+    const recommended_follows = this.state.recommended_follows ? this.state.recommended_follows.map((f, index) => <Follower
+        key={index}
+        user_id={this.state.user_id}
+        user={f}
+        toggleFollow={this.toggleFollow}
+        loading_ids={this.state.followers_loading_ids}
+        switchFollow={()=>f.following=!f.following}
+    />) : [];
+
     return (
         <div className="App">
             {!this.state.code && !this.state.user_id && (
@@ -357,7 +393,7 @@ class App extends Component {
                               style={{
                                   padding: 0,
                                   height: "100%",
-                                  overflowY: "scroll",
+                                  overflowY: "hidden",
                                   borderRight: 'solid 1px rgba(0,0,0,.125)',
                                   display: "flex",
                                   flexDirection: "column",
@@ -370,7 +406,12 @@ class App extends Component {
                             {this.state.following && this.state.bottom_tab==="home" && (
                                 <TabsNavigationComponent
                                     first_tab={
-                                      <ListGroup variant="flush" style={{width: "100%"}}>
+                                      <ListGroup
+                                          variant="flush"
+                                          style={{
+                                            width: "100%",
+                                            height: "100%",
+                                          }}>
                                         {following}
                                       </ListGroup>
                                     }
@@ -388,6 +429,7 @@ class App extends Component {
                                     user_id={this.state.user_id}
                                     loading_ids={this.state.following_loading_ids}
                                     toggleFollow={this.toggleFollow}
+                                    recommended_follows={recommended_follows}
                                 />
                             )}
                           </Col>
@@ -400,11 +442,17 @@ class App extends Component {
                                      justifyContent: "flex-start",
                                      alignItems: "center"
                                    }}>
-                                <SearchBox
-                                    user_id={this.state.user_id}
-                                    loading_ids={this.state.following_loading_ids}
-                                    toggleFollow={this.toggleFollow}
-                                />
+                                {!this.state.following && (
+                                    <Spinner animation="grow" variant="primary" style={{marginTop: "10%"}}/>
+                                )}
+                                {this.state.following && (
+                                    <SearchBox
+                                        user_id={this.state.user_id}
+                                        loading_ids={this.state.following_loading_ids}
+                                        toggleFollow={this.toggleFollow}
+                                        recommended_follows={recommended_follows}
+                                    />
+                                )}
                               </Col>
                           )}
                         </Row>

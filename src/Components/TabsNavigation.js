@@ -15,7 +15,7 @@ function TabPanel(props) {
 
     return (
         <div
-            style={{width: '100%', height: '100%'}}
+            style={{width: '100%', height: '100%', overflowY: "scroll",}}
             hidden={value !== index}
         >
             {value === index && (

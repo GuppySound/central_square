@@ -7,6 +7,8 @@ import { makeStyles } from '@material-ui/core/styles';
 
 import SearchResult from "./SearchResult";
 import {db} from '../fire';
+import Typography from "@material-ui/core/Typography";
+import {ListGroup} from "react-bootstrap";
 
 function sleep(delay = 0) {
     return new Promise((resolve) => {
@@ -75,74 +77,105 @@ const SearchBox = props => {
     }, [open]);
 
     return (
-        <Autocomplete
-            id="asynchronous-demo"
-            style={{ width: "80%" , marginTop: "5%", alignSelf: "center", justifySelf: "center"}}
-            classes={{
-                option: classes.option,
-            }}
-            open={open}
-            getOptionLabel={(option) => option.spotify_display_name}
-            getOptionSelected={(option, value) => option.spotify_display_name === value.spotify_display_name}
-            options={options}
-            loading={loading}
-            disableCloseOnSelect={true}
-            openOnFocus={true}
-            value={null}
-            inputValue={rawInput}
-            freeSolo={true}
-            clearOnBlur
-            onInputChange={(event, input, reason) => {
-                if (input.length===1){
-                    setResults(false);
-                    setOpen(true);
-                    setInput(input);
-                }
-                if (input.length===0){
+        <div style={{
+            width: "80%",
+            height: "100%",
+            paddingTop: "5%",
+            paddingBottom: "5%",
+            display: "flex",
+            flexDirection: "column",
+            alignSelf: "center",
+            overflowY: "hidden",
+            justifySelf: "center"
+        }}>
+            <Autocomplete
+                id="asynchronous-demo"
+                style={{marginBottom: "5%"}}
+                classes={{
+                    option: classes.option,
+                }}
+                open={open}
+                getOptionLabel={(option) => option.spotify_display_name}
+                getOptionSelected={(option, value) => option.spotify_display_name === value.spotify_display_name}
+                options={options}
+                loading={loading}
+                disableCloseOnSelect={true}
+                openOnFocus={true}
+                value={null}
+                inputValue={rawInput}
+                freeSolo={true}
+                clearOnBlur
+                onInputChange={(event, input, reason) => {
+                    if (input.length===1){
+                        setResults(false);
+                        setOpen(true);
+                        setInput(input);
+                    }
+                    if (input.length===0){
+                        setOpen(false);
+                        setOptions([]);
+                        setRawInput("")
+                    }
+                    if(reason==="input"){
+                        setRawInput(input)
+                    }
+                }}
+                onChange={(event, newValue) => {
+                    setRawInput(rawInput);
+                }}
+                onClose={() => {
                     setOpen(false);
-                    setOptions([]);
-                    setRawInput("")
-                }
-                if(reason==="input"){
-                    setRawInput(input)
-                }
-            }}
-            onChange={(event, newValue) => {
-                setRawInput(rawInput);
-            }}
-            onClose={() => {
-                setOpen(false);
-            }}
-            renderOption={(option, { selected }) => (
-                <React.Fragment>
-                    <SearchResult
-                        spotify_display_name={option.spotify_display_name}
-                        spotify_profile_picture={option.spotify_profile_picture}
-                        loading_ids={props.loading_ids}
-                        id={option.id}
-                        following={option.following}
-                        toggleFollow={props.toggleFollow}
-                        switchFollow={()=>option.following=!option.following}
+                }}
+                renderOption={(option, { selected }) => (
+                    <React.Fragment>
+                        <SearchResult
+                            spotify_display_name={option.spotify_display_name}
+                            spotify_profile_picture={option.spotify_profile_picture}
+                            loading_ids={props.loading_ids}
+                            id={option.id}
+                            following={option.following}
+                            toggleFollow={props.toggleFollow}
+                            switchFollow={()=>option.following=!option.following}
+                        />
+                    </React.Fragment>
+                )}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        label="Find users"
+                        variant="outlined"
+                        InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                                <React.Fragment>
+                                    {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                    {params.InputProps.endAdornment}
+                                </React.Fragment>
+                            ),
+                        }}
                     />
-                </React.Fragment>
+                )}
+            />
+            {!open && props.recommended_follows.length>0 && (
+                <div style={{
+                    display: "flex",
+                    maxHeight: "80%",
+                    alignItems: "flex-start",
+                    justifyItems: "flex-start",
+                    flexDirection: "column",
+                    padding: "5%",
+                    backgroundColor: "#f6f8fa",
+                    borderRadius: "15px",
+                }}>
+                    <Typography variant="h5" gutterBottom>
+                        Who to Follow
+                    </Typography>
+                    <ListGroup variant="flush" style={{width: "100%", overflowY: "scroll",}}>
+                        {props.recommended_follows}
+                    </ListGroup>
+                </div>
             )}
-            renderInput={(params) => (
-                <TextField
-                    {...params}
-                    label="Find users"
-                    variant="outlined"
-                    InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                            <React.Fragment>
-                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                {params.InputProps.endAdornment}
-                            </React.Fragment>
-                        ),
-                    }}
-                />
-            )}
-        />
+        </div>
     );
 }
 

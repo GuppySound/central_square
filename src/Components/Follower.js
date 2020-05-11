@@ -21,6 +21,7 @@ const Follower = props => {
     const following = (props.user.followers||[]).includes(props.user_id)
     return (
         <ListGroup.Item
+            style={{backgroundColor: "inherit"}}
         >
             <div style={
                 {
